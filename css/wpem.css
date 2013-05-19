@@ -1,0 +1,8 @@
+div.wpem-metabox-item {
+	margin: 1em 0;
+}
+
+div.wpem-metabox-item label {
+	display: inline-block;
+	width: 150px;
+}
