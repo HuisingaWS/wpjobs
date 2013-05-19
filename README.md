@@ -27,8 +27,10 @@ Changelog
 ---------
 #### 0.3 ####
 * Added simple application system
+
 #### 0.2 ####
 * Added job opening data options (wage, hours, contact)
 * Embedded css file for minor form styles
+
 #### 0.1 ####
 * Initial Version.
