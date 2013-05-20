@@ -9,6 +9,8 @@
 	*/
 ?>
 <?php
+	define( 'PLUGIN_PATH', plugin_dir_url(__FILE__) );
+	define( 'ATTACH_PATH', plugin_dir_path(__FILE__) );
 	
 	/* Initailaize Back-end */	
 	function wpem_admin_init() {
@@ -139,19 +141,52 @@
 		$meta = get_post_meta($post->ID);
 		?>
 		<div class="wpem-metabox">
+			<h4>General Job Details</h4>
 			<div class="wpem-metabox-item">
 				<label for="wpem_wage">Wage:</label>
-				<input type="text" id="wpem_wage" name="wpemmeta[wpem_wage]" value="<?php echo $meta['wpem_wage'][0]; ?>">
+				<select id="wpem_wage" name="wpemmeta[wpem_wage]">
+					<option value=""></option>
+					<option value="Hourly" <? if($meta['wpem_wage'][0] == "Hourly"){ echo "selected"; } ?>>Hourly</option>
+					<option value="Hourly DOQ" <? if($meta['wpem_wage'][0] == "Hourly DOQ"){ echo "selected"; } ?>>Hourly DOQ</option>
+					<option value="Negotiable" <? if($meta['wpem_wage'][0] == "Negotiable"){ echo "selected"; } ?>>Negotiable</option>
+					<option value="Salaried" <? if($meta['wpem_wage'][0] == "Salaried"){ echo "selected"; } ?>>Salaried</option>
+				</select>
 			</div>
 			<div class="wpem-metabox-item">
 				<label for="wpem_hours">Hours:</label>
-				<input type="text" id="wpem_hours" name="wpemmeta[wpem_hours]" value="<?php echo $meta['wpem_hours'][0]; ?>">
+				<select id="wpem_hours" name="wpemmeta[wpem_hours]">
+					<option value=""></option>
+					<option value="Full-Time" <? if($meta['wpem_hours'][0] == "Full-Time"){ echo "selected"; } ?>>Full-Time</option>
+					<option value="Full-Time 12 Hr Shifts" <? if($meta['wpem_hours'][0] == "Full-Time 12 Hr Shifts"){ echo "selected"; } ?>>Full-Time 12 Hr Shifts</option>
+					<option value="Part-Time" <? if($meta['wpem_hours'][0] == "Part-Time"){ echo "selected"; } ?>>Part-Time</option>
+				</select>
 			</div>
 			<div class="wpem-metabox-item">
 				<label for="wpem_contact">Contact:</label>
 				<input type="text" id="wpem_contact" name="wpemmeta[wpem_contact]" value="<?php echo $meta['wpem_contact'][0]; ?>">
 			</div>
 			
+			<h4>Job Application Details</h4>
+			<div class="wpem-metabox-item">
+				<label for="wpem_resume">Resume Attachment:</label>
+				<select id="wpem_resume" name="wpemmeta[wpem_resume]">
+					<option value="Yes" <? if($meta['wpem_resume'][0] == "Yes"){ echo "selected"; } ?>>Yes</option>
+					<option value="No" <? if($meta['wpem_resume'][0] == "No"){ echo "selected"; } ?>>No</option>
+				</select>
+			</div>
+			<div class="wpem-metabox-item">
+				<label for="wpem_custom">Custom Field Name (optional):</label>
+				<input type="text" id="wpem_custom" name="wpemmeta[wpem_custom]" value="<?php echo $meta['wpem_custom'][0]; ?>">
+			</div>
+			<div class="wpem-metabox-item">
+				<label for="wpem_custom2">Custom Field Type (optional):</label>
+				<select id="wpem_custom2" name="wpemmeta[wpem_custom2]">
+					<option value=""></option>
+					<option value="text" <? if($meta['wpem_custom2'][0] == "text"){ echo "selected"; } ?>>Text</option>
+					<option value="textarea" <? if($meta['wpem_custom2'][0] == "textarea"){ echo "selected"; } ?>>Textarea</option>
+				</select>
+			</div>
+			<br>
 			<input type="submit" class="button" name="wpem_meta_submit" value="Save Job Opening Details">
 		</div>
 		<?php
@@ -180,36 +215,41 @@
 			if(!$value) delete_post_meta($post->ID, $key);
 		}
 	}
-	add_action('save_post', 'wpem_save_wpem_meta', 1, 2);
+	add_action('save_post', 'wpem_save_wpem_meta', 1, 2);	
 	
+	// Display Functions and Short Codes
+	// Job Listings Page
 	function wpem_func($atts) {
+		$url = home_url();
 	  $options = get_option('wpem_options');
 		$companies = explode(",", $options['companies']);
     
     foreach($companies as $x) {
     	$tag=str_replace(' ', '-', $x);
-    	$args=array('post_type' => 'openings', 'tag' => $tag);
+    	$args=array('post_type' => 'openings', 'tag' => $tag, 'orderby' => 'title', 'order' => 'ASC');
     	$my_query = new WP_Query( $args );
     	$i = 0;
     	
     	if($my_query->have_posts()) {
-    		echo "<legend>$x</legend>";
+    		echo "<legend>$x</legend>
+    					<div class=\"well well-small\">";
         while($i < $my_query->post_count) : 
         	$post = $my_query->posts;
         	$meta = get_post_meta($post[$i]->ID);
         	
         	echo '<table class="table table-striped table-bordered table-condensed">
         				<tr>
-        					<td colspan="2"><h4>'.$post[$i]->post_title.'</h4></td>
+        					<td colspan="3"><h4>'.$post[$i]->post_title.'</h4></td>
         				</tr>
-        					<td><strong>Wage: </strong>'.$meta['wpem_wage'][0].'</td>
-        					<td><strong>Hours: </strong>'.$meta['wpem_hours'][0].'</td>
+        					<td width="33%"><strong>Wage: </strong>'.$meta['wpem_wage'][0].'</td>
+        					<td width="33%"><strong>Hours: </strong>'.$meta['wpem_hours'][0].'</td>
+        					<td width="33%"><strong>Details: </strong> <a href="#" class="more" id="'.$post[$i]->ID.'">Show</a></td>
         				</tr>
-        				<tr>
-        					<td colspan="2">';
-        					echo wpautop($post[$i]->post_content);
-        					echo '<hr>
-        					<button class="apply btn btn-primary" id="'.$post[$i]->ID.'">Apply Now</button>
+        				<tr class="'.$post[$i]->ID.' jdetails">
+        					<td colspan="3">';
+        						echo wpautop($post[$i]->post_content);
+        						echo '<hr>
+        						<center><a class="btn btn-primary" href="'.$url.'/apply/?pos='.$post[$i]->ID.'"><i class="icon-inbox"></i> Apply Now</a></center>
         					</td>
         				</tr>
         				</table>';
@@ -217,10 +257,176 @@
           $post = '';
           $i++;  
         endwhile;
+        echo "</div>";
       }
     }
+    echo '<script>
+    				$(document).ready(function () {
+    					$(".jdetails").hide();
+    					$(".more").click(function () {
+    						if($(this).text() != "Hide") {
+    							$(".jdetails").hide("4000");
+    							$(".more").text("Show");
+    							var toggle = $(this).attr("id");
+    							$(this).text("Hide");
+    							$("."+toggle).show("4000", function() {
+    								$(this).parent().parent()[0].scrollIntoView(true);
+    							});
+    						} else {
+    							$(".jdetails").hide("4000");
+    							$(".more").text("Show");
+    						}
+    						return false;
+    					});
+    				});
+    			</script>';
   }
 	add_shortcode('WPEM', 'wpem_func');
 	
+	// Application Page
+	function wpem_apply($atts) {
+  	preg_match_all('!\d+!', $_SERVER["REQUEST_URI"], $pid);
+  	$pid = implode(' ', $pid[0]);
+    $post = get_post($pid); 
+		$title = $post->post_title;
+		$meta = get_post_meta($pid);
+		// Fixes the paths for Windows
+		$workaround = str_replace("\\", "|", ATTACH_PATH);
+		
+		echo "<legend>$title Application</legend>";
+		
+		echo '<form id="apply" method="POST">
+					<div class="row">
+						<div class="span6">
+							<label for="first">First Name</label>
+							<input type="text" id="first" class="span6" name="first" placeholder="Ex: John">
+						</div>
+						<div class="span6">
+							<label for="last">Last Name</label>
+							<input type="text" id="last" class="span6" name="last" placeholder="Ex: Smith">
+						</div>
+					</div>
+					<div class="row">
+						<div class="span6">
+							<label for="email">Email Address</label>
+							<input type="text" id="email" class="span6" name="email" placeholder="Ex: yourname@example.com">
+						</div>
+						<div class="span6">
+							<label for="phone">Phone Number</label>
+							<input type="text" id="phone" class="span6" name="phone" placeholder="Ex: (555) 555-5555">
+						</div>
+					</div>
+					<div class="row">
+						<div class="span12">
+							<label for="address">Mailing Address</label>
+							<textarea id="address" class="span12" rows="3" name="address" placeholder="Ex: 123 1st St, Willmar, MN 56201"></textarea>
+						</div>
+					</div>
+					<div class="row">
+						<div class="span12">
+							<label for="education">Education History</label>
+							<textarea id="education" class="span12" rows="5" name="education" placeholder="Ex: University of Minnesota - BS in Computer Science - 2012"></textarea>
+						</div>
+					</div>
+					<div class="row">
+						<div class="span12">
+							<label for="skills">Skills & Certifications</label>
+							<textarea id="skills" class="span12" rows="5" name="skills" placeholder="Ex: Microsoft Certified Professional"></textarea>
+						</div>
+					</div>';
+		if(strlen($meta['wpem_custom'][0]) > 1) {
+			echo '<div class="row"><div class="span12"><label for="'.$meta['wpem_custom'][0].'">'.$meta['wpem_custom'][0].'</label>';
+			if($meta['wpem_custom2'][0] == 'text') {
+				echo '<input type="text" class="span12" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'">';
+			} else {
+				echo '<textarea class="span12" rows="5" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'"></textarea>';
+			}
+			echo "</div></div>";
+		}
+		echo "<hr>";
+		echo '<button type="submit" class="btn btn-success" name="submit" id="submit"><i class="icon-ok"></i> Submit Application</button>
+					<input type="hidden" id="resattach" name="resattach">
+					</form>';
+		if($meta['wpem_resume'][0] == 'Yes') {
+			echo '<form id="resumeform">
+						<button class="btn btn-primary disabled" disabled="disabled" id="resume"><i class="icon-cloud-upload"></i> Attach Resume</button>
+						<input id="resumefile" name="resumefile" type="file" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" width="20">
+						</form>';
+			// Code for the resume uploader
+			echo '<script type="text/javascript">
+		   	 		$(document).ready(function () {
+		   	 			$("#resumefile").change(function () {
+		   	 				if($(this).val() !== "") {
+		   	 					$("#resume").removeClass("disabled");
+		   	 					$("#resume").removeAttr("disabled");
+		   	 				} else {
+		   	 					$("#resume").addClass("disabled");
+		   	 					$("#resume").attr("disabled","disabled");
+		   	 				}
+		   	 			});
+				 	 		$("#resume").click(function () {
+		            var iframe = $(\'<iframe name="postiframe" id="postiframe" style="display: none" />\');
+		            $("body").append(iframe);
+		            var form = $("#resumeform");
+		            form.attr("action", "'.PLUGIN_PATH . 'resume.php");
+		            form.attr("method", "post");
+		            form.attr("enctype", "multipart/form-data");
+		            form.attr("encoding", "multipart/form-data");
+		            form.attr("target", "postiframe");
+		            form.attr("file", $("#resumefile").val());
+		            form.submit();
+		
+		            $("#postiframe").load(function () {
+		            	iframeContents = $("#postiframe")[0].contentWindow.document.body.innerHTML;
+		              $("#resattach").val(iframeContents);
+		              $("#resume").addClass("disabled");
+		   	 					$("#resume").attr("disabled","disabled");
+		   	 					$("#resume").html("<i class=\"icon-cloud-upload\"></i> Resume Uploaded!");
+		   	 					$("#resumefile").hide();
+		            });
+		            return false;
+							});
+						});
+						</script>';
+		}
+		echo '<script type="text/javascript">
+		   	 		$(document).ready(function () {
+		   	 			$("#apply").submit(function () {
+		   	 				var address = $("#address").val().replace(/\r\n|\r|\n/g,"<br>");
+		   	 						education = $("#education").val().replace(/\r\n|\r|\n/g,"<br>");
+		   	 						skills = $("#skills").val().replace(/\r\n|\r|\n/g,"<br>");
+		   	 						
+			   	 			$.ajax({
+				 	 				url: "'.PLUGIN_PATH . 'resume.php",
+				 	 				data: {"pdir" : "'.$workaround.'",
+				 	 							 "jobtitle" : "'.$title.'",
+				 	 							 "contact" : "'.$meta['wpem_contact'][0].'",
+				 	 							 "resattach" : $("#resattach").val(),';
+				 	 							 if(strlen($meta['wpem_custom'][0]) > 1) {
+				 	 				  echo '"custom1" : "'.$meta['wpem_custom'][0].'",
+				 	 							  "custom2" : $("[id=\''.$meta['wpem_custom'][0].'\']").val(),';
+				 	 							 }
+				 	 					echo '"first" : $("#first").val(),
+				 	 							 "last" : $("#last").val(),
+				 	 							 "email" : $("#email").val(),
+				 	 							 "phone" : $("#phone").val(),
+				 	 							 "address" : address,
+				 	 							 "education" : education,
+				 	 							 "skills" : skills
+				 	 							},
+				 	 				type: "POST",
+				 	 				async: false,
+				 	 				success:  function(html){
+				 	 					$("#apply").before(html);
+				 	 					$("#apply").remove();
+				 	 					$("#resumeform").remove();
+				 	 				}
+				 	 			});
+				 	 			return false;
+				 	 		});
+		   	 		});
+		   	 	</script>';
+  }
+	add_shortcode('EMAPPLY', 'wpem_apply');
 	
 ?>
