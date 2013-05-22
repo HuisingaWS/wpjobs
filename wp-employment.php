@@ -1,11 +1,11 @@
 <?php
 	/*
 	Plugin Name: WP Job Openings
-	Plugin URI: http://www.lsius.net/
+	Plugin URI: https://github.com/ahuisinga/wpjobs
 	Description: Creates Simple Way to Manage Job Postings and Employment Information
 	Author: Aaron Huisinga
-	Version: 0.2
-	Author URI: http://www.lsius.net/
+	Version: 0.4
+	Author URI: https://github.com/ahuisinga
 	*/
 ?>
 <?php
@@ -49,6 +49,8 @@
 		
 		/* Add fields to cover page settings */
 		add_settings_field('companies', 'Company Names', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'companies', 'type' => 'text') );
+		add_settings_field('rname', 'Auto Reply From (Name)', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'rname', 'type' => 'text') );
+		add_settings_field('reply', 'Auto Reply Content', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'reply', 'type' => 'textarea') );
 	}
 	add_action('admin_init', 'wpem_settings_init');
 	
@@ -62,7 +64,11 @@
 			switch($type) {
 				case 'text':
 					$class = ($args['class']) ? ' class="'.$args['class'].'"' : '';
-					echo "<input id='wpem_".$id."' name='wpem_options[".$id."]' type='text'". $class ." value='".$options[$id]."' />";
+					echo "<input style='width: 90%;' id='wpem_".$id."' name='wpem_options[".$id."]' type='text'". $class ." value='".$options[$id]."' />";
+					break;
+				case 'textarea':
+					$class = ($args['class']) ? ' class="'.$args['class'].'"' : '';
+					echo "<textarea style='width: 90%;' rows='15' id='wpem_".$id."' name='wpem_options[".$id."]' ". $class .">".$options[$id]."</textarea>";
 					break;
 				default:
 					break;
@@ -163,7 +169,7 @@
 			</div>
 			<div class="wpem-metabox-item">
 				<label for="wpem_contact">Contact:</label>
-				<input type="text" id="wpem_contact" name="wpemmeta[wpem_contact]" value="<?php echo $meta['wpem_contact'][0]; ?>">
+				<input type="text" style="width: 70%;" id="wpem_contact" name="wpemmeta[wpem_contact]" value="<?php echo $meta['wpem_contact'][0]; ?>">
 			</div>
 			
 			<h4>Job Application Details</h4>
@@ -176,7 +182,7 @@
 			</div>
 			<div class="wpem-metabox-item">
 				<label for="wpem_custom">Custom Field Name (optional):</label>
-				<input type="text" id="wpem_custom" name="wpemmeta[wpem_custom]" value="<?php echo $meta['wpem_custom'][0]; ?>">
+				<input type="text" style="width: 70%;" id="wpem_custom" name="wpemmeta[wpem_custom]" value="<?php echo $meta['wpem_custom'][0]; ?>">
 			</div>
 			<div class="wpem-metabox-item">
 				<label for="wpem_custom2">Custom Field Type (optional):</label>
@@ -292,6 +298,10 @@
 		$meta = get_post_meta($pid);
 		// Fixes the paths for Windows
 		$workaround = str_replace("\\", "|", ATTACH_PATH);
+		// Query the automatic email reply content
+		$options = get_option('wpem_options');
+		$reply = $options['reply'];
+		$rname = $options['rname'];
 		
 		echo "<legend>$title Application</legend>";
 		
@@ -342,6 +352,9 @@
 				echo '<textarea class="span12" rows="5" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'"></textarea>';
 			}
 			echo "</div></div>";
+		}
+		if(strlen($reply) > 0) {
+			echo '<input type="hidden" id="reply" name="reply" value="'.$reply.'">';
 		}
 		echo "<hr>";
 		echo '<button type="submit" class="btn btn-success" name="submit" id="submit"><i class="icon-ok"></i> Submit Application</button>
@@ -395,6 +408,7 @@
 		   	 				var address = $("#address").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						education = $("#education").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						skills = $("#skills").val().replace(/\r\n|\r|\n/g,"<br>");
+		   	 						reply = $("#reply").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						
 			   	 			$.ajax({
 				 	 				url: "'.PLUGIN_PATH . 'resume.php",
@@ -405,6 +419,10 @@
 				 	 							 if(strlen($meta['wpem_custom'][0]) > 1) {
 				 	 				  echo '"custom1" : "'.$meta['wpem_custom'][0].'",
 				 	 							  "custom2" : $("[id=\''.$meta['wpem_custom'][0].'\']").val(),';
+				 	 							 }
+				 	 							 if(strlen($reply) > 1) {
+				 	 				  echo '"reply" : reply,
+				 	 				  			"rname" : "'.$rname.'",';
 				 	 							 }
 				 	 					echo '"first" : $("#first").val(),
 				 	 							 "last" : $("#last").val(),

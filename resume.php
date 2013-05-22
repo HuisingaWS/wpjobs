@@ -7,17 +7,18 @@ if(isset($_POST['pdir'])) {
 	require 'class.phpmailer.php';
 
 	$mail = new PHPMailer;
-	
 	$mail->From = 'noreply@'.$_SERVER['HTTP_HOST'];
 	$mail->FromName = 'Application Mailer';
-	$mail->AddAddress($_POST['contact']);
-	
+	// Break apart and add any addresses given
+	$sendTo = explode(',', $_POST['contact']);
+	foreach ($sendTo as $x) {
+		$mail->AddAddress($x);
+	}
 	$mail->WordWrap = 50;
 	if($_POST['resattach'] != '' && file_exists($workaround.'uploads\\'.$_POST['resattach'])) {
 		$mail->AddAttachment($workaround.'uploads\\'.$_POST['resattach']);
 	}
 	$mail->IsHTML(true);
-	
 	$mail->Subject = 'New Application for '.$_POST['jobtitle'];
 	$mail->Body    = 'Hello, a new application for the '.$_POST['jobtitle'].' position has been received! <br><br>
 										<table width="100%" style="border: 1px solid #000; border-left: 0; border-radius: 4px; border-spacing: 0;">
@@ -47,11 +48,32 @@ if(isset($_POST['pdir'])) {
 										<br>
 										If the applicant included a resume in their submission, it has been attached to this email.';
 	$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
-	
 	if(!$mail->Send()) {
 	   echo 'Message could not be sent.';
 	   echo 'Mailer Error: ' . $mail->ErrorInfo;
 	   exit;
+	}
+	
+	// Send an automatic response if it is requested
+	if(isset($_POST['reply'])) {
+		$reply = new PHPMailer;
+		$reply->From = 'noreply@'.$_SERVER['HTTP_HOST'];
+		if(isset($_POST['rname']) && strlen($_POST['rname']) > 0) {
+			$reply->FromName = $_POST['rname'];	
+		} else {
+			$reply->FromName = 'Application Mailer';
+		}
+		$reply->AddAddress($_POST['email']);
+		$reply->WordWrap = 50;
+		$reply->IsHTML(true);
+		$reply->Subject = 'Application Reception Confirmation';
+		$reply->Body    = $_POST['reply'];
+		$reply->AltBody = $_POST['reply'];
+		if(!$reply->Send()) {
+		   echo 'Message could not be sent.';
+		   echo 'Mailer Error: ' . $reply->ErrorInfo;
+		   exit;
+		}
 	}
 	
 	// Remove the uploaded resume

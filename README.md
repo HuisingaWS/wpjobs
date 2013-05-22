@@ -22,26 +22,11 @@ Dependencies
 
 Installation
 ------------
-1. Upload the `wp-employment` to the `/wp-content/plugins/` directory
+1. Upload the `wp-openings.zip` file to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Adjust settings under `Settings -> WP Employment`
+3. Adjust settings under `Settings -> Job Openings`
 4. Create some job listings under `Employment` custom post type
 	1. Be sure to give the post a tag of the company that this listing is for (valid tags are defined in Settings).
 	2. Also be sure to check the Meta information under the post body. These are settings unique to the job listing post type.
 5. Create a new WP page, and use the short code `[WPEM]` in post content to pull in active listings and format them automatically.
 6. Create another new WP page, and use the short code `[EMAPPLY]` to let viewers apply for positions that are listed.
-
-Changelog
----------
-##### 0.4 #####
-* Job application process now completely functional
-
-##### 0.3 #####
-* Added simple application system
-
-##### 0.2 #####
-* Added job opening data options (wage, hours, contact)
-* Embedded css file for minor form styles
-
-##### 0.1 #####
-* Initial Version.
