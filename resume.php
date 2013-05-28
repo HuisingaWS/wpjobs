@@ -46,104 +46,104 @@ if(isset($_POST['pdir'])) {
 	}
 	$mail->IsHTML(true);
 	$mail->Subject = 'New Application for '.$_POST['jobtitle'];
-	$mail->Body    = 'Hello, a new application for the '.$_POST['jobtitle'].' position has been received! <br><br>
+	$mail->Body    = 'Hello, a new application for the '.strip_tags($_POST['jobtitle']).' position has been received! <br><br>
 										<table width="100%" style="border: 1px solid #000; border-left: 0; border-radius: 4px; border-spacing: 0;">
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>First Name:</b> '.$_POST['first'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Last Name:</b> '.$_POST['last'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>First Name:</b> '.strip_tags($_POST['first']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Last Name:</b> '.strip_tags($_POST['last']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Email Address:</b> '.$_POST['email'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone Number:</b> '.$_POST['phone'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Email Address:</b> '.strip_tags($_POST['email']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone Number:</b> '.strip_tags($_POST['phone']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Mailing Address:</b> <br> '.$_POST['address'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Mailing Address:</b> <br> '.strip_tags($_POST['address']).'</td>
 											</tr>';
 			if(isset($_POST['custom1']) && isset($_POST['custom2'])) {
 			 $mail->Body .= '<tr>
-											   <td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>'.$_POST['custom1'].':</b> <br> '.$_POST['custom2'].'</td>
+											   <td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>'.strip_tags($_POST['custom1']).':</b> <br> '.strip_tags($_POST['custom2']).'</td>
 											 </tr>';
 											}
 								 $mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000; background-color: #cccccc;"><b>Further Information</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Date Available:</b> '.$_POST['available'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Desired Salary:</b> '.$_POST['salary'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Date Available:</b> '.strip_tags($_POST['available']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Desired Salary:</b> '.strip_tags($_POST['salary']).'</td>
 											</tr>
 								 			<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Experience & Knowledge:</b> <br> '.$_POST['experience'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Experience & Knowledge:</b> <br> '.strip_tags($_POST['experience']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Special Skills:</b> <br> '.$_POST['skills'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Special Skills:</b> <br> '.strip_tags($_POST['skills']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>US Citizen:</b> '.$_POST['citizen'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If no, authorized?:</b> '.$_POST['authorized'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>US Citizen:</b> '.strip_tags($_POST['citizen']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If no, authorized?:</b> '.strip_tags($_POST['authorized']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Willing to Relocate?:</b> '.$_POST['relocate'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If yes, explain:</b> '.$_POST['relocate2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Willing to Relocate?:</b> '.strip_tags($_POST['relocate']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If yes, explain:</b> '.strip_tags($_POST['relocate2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Worked for us before?:</b> '.$_POST['previous'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If so, which and when?:</b> '.$_POST['previous2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Worked for us before?:</b> '.strip_tags($_POST['previous']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If so, which and when?:</b> '.strip_tags($_POST['previous2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Convicted of a Felony?:</b> '.$_POST['felony'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If yes, explain:</b> '.$_POST['felony2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Convicted of a Felony?:</b> '.strip_tags($_POST['felony']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If yes, explain:</b> '.strip_tags($_POST['felony2']).'</td>
 											</tr>';
 											
 									if(isset($_POST['hs']) && strlen($_POST['hs']) > 1) {
 										$mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000; background-color: #cccccc;"><b>Education History</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>High School:</b> '.$_POST['hs'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>City, State:</b> '.$_POST['hs2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>High School:</b> '.strip_tags($_POST['hs']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>City, State:</b> '.strip_tags($_POST['hs2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.$_POST['hs3'].' - '.$_POST['hs4'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Did you graduate?:</b> '.$_POST['hs5'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.strip_tags($_POST['hs3']).' - '.strip_tags($_POST['hs4']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Did you graduate?:</b> '.strip_tags($_POST['hs5']).'</td>
 											</tr>';
 										if(isset($_POST['c11']) && strlen($_POST['c11']) > 1) {
 											$mail->Body .= '
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>College:</b> '.$_POST['c11'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>City, State:</b> '.$_POST['c12'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>College:</b> '.strip_tags($_POST['c11']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>City, State:</b> '.strip_tags($_POST['c12']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From:</b> '.$_POST['c13'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>To:</b> '.$_POST['c14'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From:</b> '.strip_tags($_POST['c13']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>To:</b> '.strip_tags($_POST['c14']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Did you graduate?:</b> '.$_POST['c15'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Degree:</b> '.$_POST['c16'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Did you graduate?:</b> '.strip_tags($_POST['c15']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Degree:</b> '.strip_tags($_POST['c16']).'</td>
 											</tr>';
 											
 										}
 										if(isset($_POST['c21']) && strlen($_POST['c21']) > 1) {
 											$mail->Body .= '
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>College:</b> '.$_POST['c21'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>City, State:</b> '.$_POST['c22'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>College:</b> '.strip_tags($_POST['c21']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>City, State:</b> '.strip_tags($_POST['c22']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From:</b> '.$_POST['c23'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>To:</b> '.$_POST['c24'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From:</b> '.strip_tags($_POST['c23']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>To:</b> '.strip_tags($_POST['c24']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Did you graduate?:</b> '.$_POST['c25'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Degree:</b> '.$_POST['c26'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Did you graduate?:</b> '.strip_tags($_POST['c25']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Degree:</b> '.strip_tags($_POST['c26']).'</td>
 											</tr>';
 										}
 										$mail->Body .= '
 								 			<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Career Objectives:</b> '.$_POST['objectives'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Career Objectives:</b> '.strip_tags($_POST['objectives']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Special Training, Experience, or Pertinent Data:</b> '.$_POST['etc'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Special Training, Experience, or Pertinent Data:</b> '.strip_tags($_POST['etc']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>How Did You Hear About Us?:</b> '.$_POST['referral'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>How Did You Hear About Us?:</b> '.strip_tags($_POST['referral']).'</td>
 											</tr>';
 									}
 									
@@ -151,15 +151,15 @@ if(isset($_POST['pdir'])) {
 										$mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000; background-color: #cccccc;"><b>Military Service</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Branch:</b> '.$_POST['branch'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.$_POST['mi1'].' - '.$_POST['mi2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Branch:</b> '.strip_tags($_POST['branch']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.strip_tags($_POST['mi1']).' - '.strip_tags($_POST['mi2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Rank at Discharge:</b> '.$_POST['mi3'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Type of Discharge:</b> '.$_POST['mi4'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Rank at Discharge:</b> '.strip_tags($_POST['mi3']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Type of Discharge:</b> '.strip_tags($_POST['mi4']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If other than Honorable, Explain:</b> '.$_POST['mi5'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>If other than Honorable, Explain:</b> '.strip_tags($_POST['mi5']).'</td>
 											</tr>';
 									}
 									
@@ -167,107 +167,107 @@ if(isset($_POST['pdir'])) {
 										$mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000; background-color: #cccccc;"><b>Previous Employment</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.$_POST['peco1'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.$_POST['pead1'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.strip_tags($_POST['peco1']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.strip_tags($_POST['pead1']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.$_POST['pejt1'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.$_POST['peph1'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.strip_tags($_POST['pejt1']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.strip_tags($_POST['peph1']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.$_POST['pesu1'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.$_POST['peref1'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.strip_tags($_POST['pesu1']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.strip_tags($_POST['peref1']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.$_POST['pess1'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.$_POST['pees1'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.strip_tags($_POST['pess1']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.strip_tags($_POST['pees1']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.$_POST['peres1'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.strip_tags($_POST['peres1']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.$_POST['pefr1'].' - '.$_POST['peto1'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.$_POST['perl1'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.strip_tags($_POST['pefr1']).' - '.strip_tags($_POST['peto1']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.strip_tags($_POST['perl1']).'</td>
 											</tr>';
 											if(isset($_POST['peco2']) && strlen($_POST['peco2']) > 1) {
 												$mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Previous Employment</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.$_POST['peco2'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.$_POST['pead2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.strip_tags($_POST['peco2']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.strip_tags($_POST['pead2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.$_POST['pejt2'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.$_POST['peph2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.strip_tags($_POST['pejt2']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.strip_tags($_POST['peph2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.$_POST['pesu2'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.$_POST['peref2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.strip_tags($_POST['pesu2']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.strip_tags($_POST['peref2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.$_POST['pess2'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.$_POST['pees2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.strip_tags($_POST['pess2']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.strip_tags($_POST['pees2']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.$_POST['peres2'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.strip_tags($_POST['peres2']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.$_POST['pefr2'].' - '.$_POST['peto2'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.$_POST['perl2'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.strip_tags($_POST['pefr2']).' - '.strip_tags($_POST['peto2']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.strip_tags($_POST['perl2']).'</td>
 											</tr>';
 											}
 											if(isset($_POST['peco3']) && strlen($_POST['peco3']) > 1) {
 												$mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Previous Employment</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.$_POST['peco3'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.$_POST['pead3'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.strip_tags($_POST['peco3']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.strip_tags($_POST['pead3']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.$_POST['pejt3'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.$_POST['peph3'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.strip_tags($_POST['pejt3']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.strip_tags($_POST['peph3']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.$_POST['pesu3'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.$_POST['peref3'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.strip_tags($_POST['pesu3']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.strip_tags($_POST['peref3']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.$_POST['pess3'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.$_POST['pees3'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.strip_tags($_POST['pess3']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.strip_tags($_POST['pees3']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.$_POST['peres3'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.strip_tags($_POST['peres3']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.$_POST['pefr3'].' - '.$_POST['peto3'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.$_POST['perl3'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.strip_tags($_POST['pefr3']).' - '.strip_tags($_POST['peto3']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.strip_tags($_POST['perl3']).'</td>
 											</tr>';
 											}
 											if(isset($_POST['peco4']) && strlen($_POST['peco4']) > 1) {
 												$mail->Body .= '
 								 			<tr><td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Previous Employment</b></td></tr>
 								 			<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.$_POST['peco4'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.$_POST['pead4'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Company:</b> '.strip_tags($_POST['peco4']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Address:</b> '.strip_tags($_POST['pead4']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.$_POST['pejt4'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.$_POST['peph4'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Job Title:</b> '.strip_tags($_POST['pejt4']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Phone:</b> '.strip_tags($_POST['peph4']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.$_POST['pesu4'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.$_POST['peref4'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Supervisor:</b> '.strip_tags($_POST['pesu4']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Can Contact for Reference?:</b> '.strip_tags($_POST['peref4']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.$_POST['pess4'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.$_POST['pees4'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Starting Salary:</b> '.strip_tags($_POST['pess4']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Ending Salary:</b> '.strip_tags($_POST['pees4']).'</td>
 											</tr>
 											<tr>
-												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.$_POST['peres4'].'</td>
+												<td colspan="2" style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Responsibilities:</b> '.strip_tags($_POST['peres4']).'</td>
 											</tr>
 											<tr>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.$_POST['pefr4'].' - '.$_POST['peto4'].'</td>
-												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.$_POST['perl4'].'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>From - To:</b> '.strip_tags($_POST['pefr4']).' - '.strip_tags($_POST['peto4']).'</td>
+												<td style="border-left: 1px solid #000; padding: 8px; line-height: 20px; text-align: left; vertical-align: top; border-top: 1px solid #000;"><b>Reason for Leaving:</b> '.strip_tags($_POST['perl4']).'</td>
 											</tr>';
 											}
 									}
