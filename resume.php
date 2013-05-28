@@ -22,6 +22,11 @@ if(isset($_FILES['resumefile'])) {
 
 // Process and mail the application
 if(isset($_POST['pdir'])) {
+	// Make sure that necessary fields weren't skipped somehow
+	// Since checks are done via javascript, this likely means a bot is responsible
+	if($_POST['first'] == '' OR $_POST['last'] == '' OR $_POST['phone'] == '' OR $_POST['email'] == '' OR $_POST['address'] == '') {
+		exit();
+	}
 	// Fixes the paths for Windows
 	$workaround = str_replace("|", "\\", $_POST['pdir']);
 	$workaround = str_replace("/", "\\", $workaround);

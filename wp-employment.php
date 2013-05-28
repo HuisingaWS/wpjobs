@@ -955,6 +955,37 @@
 		echo '<script type="text/javascript">
 		   	 		$(document).ready(function () {
 		   	 			$("#submit").click(function () {
+		   	 				$(".help-inline").unwrap();
+		   	 				$(".help-inline").remove();
+		   	 				var failure = 0;
+		   	 				function displayError( field, errortext ) {
+		   	 					$("#"+field).wrap("<div class=\"control-group error "+field+"\" />");
+		   	 					$("."+field).append("<span class=\"help-inline\">"+errortext+"</span>");
+		   	 					failure = 1;
+		   	 				}
+		   	 				
+		   	 				if($("#first").val() === "") {
+		   	 					displayError("first","A first name is required");
+		   	 				}
+		   	 				if($("#last").val() === "") {
+		   	 					displayError("last","A last name is required");
+		   	 				}
+		   	 				var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+		   	 				if($("#email").val() === "" || !emailReg.test($("#email").val()) ) {
+		   	 					displayError("email","A valid email is required");
+		   	 				}
+		   	 				if($("#phone").val() === "") {
+		   	 					displayError("phone","A phone number is required");
+		   	 				}
+		   	 				if($("#address").val() === "") {
+		   	 					displayError("address","A mailing address is required");
+		   	 				}
+		   	 				if($("#signature").val() === "") {
+		   	 					displayError("signature","A signature is required");
+		   	 				}
+		   	 				
+		   	 				if(failure === 1) { $("html, body").animate({scrollTop: $(".navbar").offset().top}, 2000); return false; }
+		   	 				
 		   	 				var address = $("#address").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						experience = $("#experience").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						skills = $("#skills").val().replace(/\r\n|\r|\n/g,"<br>");
