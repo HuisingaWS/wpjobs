@@ -4,6 +4,9 @@ if(isset($_FILES['resumefile'])) {
 	$filename=str_replace("%", "", $_FILES["resumefile"]["name"]);
 	$filename=str_replace("\"", "", $filename);
 	$filename=str_replace("'", "", $filename);
+	// Fixes the paths for Windows
+	$workaround = str_replace("|", "\\", $_POST['updir']);
+	$workaround = str_replace("/", "\\", $workaround);
 	
 	if ($_FILES["resumefile"]["type"] != "application/msword" AND $_FILES["resumefile"]["type"] != "application/pdf" AND $_FILES["resumefile"]["type"] != "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
 		echo "Invalid filetype. The file must be a PDF, or a Word document.";
@@ -13,7 +16,7 @@ if(isset($_FILES['resumefile'])) {
 		if (file_exists($filename)) {
 			echo $filename . " already exists. ";
 		} else {
-			move_uploaded_file($_FILES["resumefile"]["tmp_name"], "uploads/" . $filename);
+			move_uploaded_file($_FILES["resumefile"]["tmp_name"], "$workaround\\" . $filename);
 			echo $filename;
 		}
 	}
@@ -41,8 +44,8 @@ if(isset($_POST['pdir'])) {
 		$mail->AddAddress($x);
 	}
 	$mail->WordWrap = 50;
-	if($_POST['resattach'] != '' && file_exists($workaround.'uploads\\'.$_POST['resattach'])) {
-		$mail->AddAttachment($workaround.'uploads\\'.$_POST['resattach']);
+	if($_POST['resattach'] != '' && file_exists($workaround.'\\'.$_POST['resattach'])) {
+		$mail->AddAttachment($workaround.'\\'.$_POST['resattach']);
 	}
 	$mail->IsHTML(true);
 	$mail->Subject = 'New Application for '.$_POST['jobtitle'];
@@ -305,8 +308,8 @@ if(isset($_POST['pdir'])) {
 	}
 	
 	// Remove the uploaded resume
-	if ($_POST['resattach'] != '' && file_exists($workaround.'uploads\\'.$_POST['resattach'])) {
-		unlink($workaround.'uploads\\'.$_POST['resattach']);
+	if ($_POST['resattach'] != '' && file_exists($workaround.'\\'.$_POST['resattach'])) {
+		unlink($workaround.'\\'.$_POST['resattach']);
 	}
 	
 	echo '<div class="alert alert-success alert-block">

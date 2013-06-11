@@ -14,11 +14,12 @@ Integrates a simple system to list job openings, display them on a sleek and org
 Uses the short code `[WPEM]` to render the job listings with the proper tags defined in the settings panel.
 Uses the short code `[EMAPPLY]` to render the job application form for the selected job opening.
 
+Note: When creating job listings, be sure to fill out the job meta data (contact email, wage, resume, etc)! Without some of them, you may experience errors.
+
 Dependencies
 ------------
 1. Active [Wordpress](http://wordpress.org/) installation (tested on 3.5+).
 2. Uses [PHPMailer](https://github.com/PHPMailer/PHPMailer) to format and mail the received applications.
-3. Current table, list, and button styles depend on [Bootstrap](http://getbootstrap.com). This is temporary, and will be changed in favor of custom styles later on.
 
 Installation
 ------------

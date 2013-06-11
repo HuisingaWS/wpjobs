@@ -1,16 +1,15 @@
 <?php
 	/*
-	Plugin Name: WP Job Openings
+	Plugin Name: WP Employment
 	Plugin URI: https://github.com/ahuisinga/wpjobs
-	Description: Creates Simple Way to Manage Job Postings and Employment Information
+	Description: Integrates a simple system to list job openings, display them on a sleek and organized page, and accept applications via pre-formatted email messages.
 	Author: Aaron Huisinga
-	Version: 0.4
-	Author URI: https://github.com/ahuisinga
+	Version: 0.3
+	Author URI: https://huisinga.ws/
 	*/
-?>
-<?php
+	
 	define( 'PLUGIN_PATH', plugin_dir_url(__FILE__) );
-	define( 'ATTACH_PATH', plugin_dir_path(__FILE__) );
+	$upload_dir = wp_upload_dir();
 	
 	/* Initailaize Back-end */	
 	function wpem_admin_init() {
@@ -25,6 +24,28 @@
 		add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function );
 	}
 	add_action('admin_menu', 'wpem_admin_init');
+	
+	/* Display a notice about adding shortcodes after plugin installation */
+	add_action('admin_notices', 'activate_plugin_notice');
+	function activate_plugin_notice() {
+		global $current_user ;
+	         $user_id = $current_user->ID;
+	  /* Check that the user hasn't already clicked to ignore the message */
+		if ( current_user_can('administrator') && !get_user_meta($user_id, 'notice_wpem_ignore') ) {
+	  	echo '<div class="updated"><p>'; 
+	    printf(__('The WP Employment plugin will not function until pages with the [WPEM] and [EMAPPLY] shortcodes are created. <span style="float: right;"><a href="%1$s">Hide Notice</a></span>'), '?notice_wpem_ignore=0');
+	    echo "</p></div>";
+		}
+	}
+	
+	add_action('admin_init', 'notice_wpem_ignore');
+	function notice_wpem_ignore() {
+		global $current_user;
+	         $user_id = $current_user->ID;
+	  if ( isset($_GET['notice_wpem_ignore']) && '0' == $_GET['notice_wpem_ignore'] ) {
+	  	add_user_meta($user_id, 'notice_wpem_ignore', 'true', true);
+		}
+	}
 	
 	
 	/* Load Default Settings */
@@ -48,10 +69,11 @@
 		register_setting( 'wpem_optiongroup', 'wpem_options' ); // General Settings
 		
 		/* Add fields to cover page settings */
-		add_settings_field('companies', 'Company Names', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'companies', 'type' => 'text') );
-		add_settings_field('rname', 'Auto Reply From (Name)', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'rname', 'type' => 'text') );
-		add_settings_field('reply', 'Auto Reply Content', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'reply', 'type' => 'textarea') );
-		add_settings_field('disclaimer', 'Application Disclaimer', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'disclaimer', 'type' => 'textarea') );
+		add_settings_field('companies', 'Company Names', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'companies', 'type' => 'text', 'placeholder' => 'Company 1,Company 2') );
+		add_settings_field('applyp', 'Application Page', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'applyp', 'type' => 'text', 'placeholder' => 'Title of the page containing the [EMAPPLY] shortcode') );
+		add_settings_field('rname', 'Auto Reply From (Name)', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'rname', 'type' => 'text', 'placeholder' => 'Human Resources') );
+		add_settings_field('reply', 'Auto Reply Content', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'reply', 'type' => 'textarea', 'placeholder' => 'Email that will be sent to user when application is submitted') );
+		add_settings_field('disclaimer', 'Application Disclaimer', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'disclaimer', 'type' => 'textarea', 'placeholder' => 'Optional disclaimer to be displayed on the application') );
 	}
 	add_action('admin_init', 'wpem_settings_init');
 	
@@ -61,15 +83,16 @@
 			$options = get_option('wpem_options');
 			$id = $args['id'];
 			$type = $args['type'];
+			$placeholder = $args['placeholder'];
 			
 			switch($type) {
 				case 'text':
 					$class = ($args['class']) ? ' class="'.$args['class'].'"' : '';
-					echo "<input style='width: 90%;' id='wpem_".$id."' name='wpem_options[".$id."]' type='text'". $class ." value='".$options[$id]."' />";
+					echo "<input style='width: 90%;' placeholder='".$placeholder."' id='wpem_".$id."' name='wpem_options[".$id."]' type='text'". $class ." value='".$options[$id]."' />";
 					break;
 				case 'textarea':
 					$class = ($args['class']) ? ' class="'.$args['class'].'"' : '';
-					echo "<textarea style='width: 90%;' rows='15' id='wpem_".$id."' name='wpem_options[".$id."]' ". $class .">".$options[$id]."</textarea>";
+					echo "<textarea style='width: 90%;' placeholder='".$placeholder."' rows='15' id='wpem_".$id."' name='wpem_options[".$id."]' ". $class .">".$options[$id]."</textarea>";
 					break;
 				default:
 					break;
@@ -252,6 +275,9 @@
 	// Display Functions and Short Codes
 	// Job Listings Page
 	function wpem_func($atts) {
+	 	echo '<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>';
+	 	wp_register_style( 'wpem_css', plugins_url('css/wpem.css', __FILE__) );
+	 	wp_enqueue_style('wpem_css');
 		$url = home_url();
 	  $options = get_option('wpem_options');
 		$companies = explode(",", $options['companies']);
@@ -263,8 +289,7 @@
     	$i = 0;
     	
     	if($my_query->have_posts()) {
-    		echo "<legend>$x</legend>
-    					<div class=\"well well-small\">";
+    		echo "<legend>$x</legend>";
         while($i < $my_query->post_count) : 
         	$post = $my_query->posts;
         	$meta = get_post_meta($post[$i]->ID);
@@ -281,7 +306,7 @@
         					<td colspan="3">';
         						echo wpautop($post[$i]->post_content);
         						echo '<hr>
-        						<center><a class="btn btn-primary" href="'.$url.'/apply/?pos='.$post[$i]->ID.'"><i class="icon-inbox"></i> Apply Now</a></center>
+        						<center><a class="btn btn-primary" href="'.$url.'/'.$options['applyp'].'/?pos='.$post[$i]->ID.'"><i class="icon-inbox"></i> Apply Now</a></center>
         					</td>
         				</tr>
         				</table>';
@@ -289,7 +314,6 @@
           $post = '';
           $i++;  
         endwhile;
-        echo "</div>";
       }
     }
     echo '<script>
@@ -317,78 +341,83 @@
 	
 	// Application Page
 	function wpem_apply($atts) {
+		wp_register_style( 'wpem_css', plugins_url('css/wpem.css', __FILE__) );
+	 	wp_enqueue_style('wpem_css');
   	preg_match_all('!\d+!', $_SERVER["REQUEST_URI"], $pid);
   	$pid = implode(' ', $pid[0]);
     $post = get_post($pid); 
 		$title = $post->post_title;
 		$meta = get_post_meta($pid);
 		// Fixes the paths for Windows
-		$workaround = str_replace("\\", "|", ATTACH_PATH);
+		$upload_dir = wp_upload_dir();
+		$workaround = str_replace("\\", "|", $upload_dir['basedir']);
 		// Query the automatic email reply content
 		$options = get_option('wpem_options');
 		$reply = $options['reply'];
 		$rname = $options['rname'];
 		
-		
-		//echo "<h2 id='title'>$title Application</h2>";
-		
-		echo '<span id="apply">
+		echo '<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+					<span id="apply">
 					<legend>General Information</legend>
-					<div class="row">
-						<div class="span6">
-							<label for="first" class="text-info">First Name</label>
-							<input type="text" id="first" class="span6" name="first" placeholder="Ex: John">
-						</div>
-						<div class="span6">
-							<label for="last" class="text-info">Last Name</label>
-							<input type="text" id="last" class="span6" name="last" placeholder="Ex: Smith">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="email" class="text-info">Email Address</label>
-							<input type="text" id="email" class="span6" name="email" placeholder="Ex: yourname@example.com">
-						</div>
-						<div class="span6">
-							<label for="phone" class="text-info">Phone Number</label>
-							<input type="text" id="phone" class="span6" name="phone" placeholder="Ex: (555) 555-5555">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="address" class="text-info">Mailing Address</label>
-							<textarea id="address" class="span12" rows="3" name="address" placeholder="Ex: 123 1st St, Willmar, MN 56201"></textarea>
-						</div>
-					</div>';
+					<table class="table">
+						<tr>
+							<td>
+								<label for="first" class="text-info">First Name</label>
+								<input type="text" id="first" class="span6" name="first" placeholder="Ex: John">
+							</td>
+							<td>
+								<label for="last" class="text-info">Last Name</label>
+								<input type="text" id="last" class="span6" name="last" placeholder="Ex: Smith">
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label for="email" class="text-info">Email Address</label>
+								<input type="text" id="email" class="span6" name="email" placeholder="Ex: yourname@example.com">
+							</td>
+							<td>
+								<label for="phone" class="text-info">Phone Number</label>
+								<input type="text" id="phone" class="span6" name="phone" placeholder="Ex: (555) 555-5555">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<label for="address" class="text-info">Mailing Address</label>
+								<textarea id="address" class="span12" rows="3" name="address" placeholder="Ex: 123 1st St, Willmar, MN 56201"></textarea>
+							</td>
+						</tr>';
 					
 					if(strlen($meta['wpem_custom'][0]) > 1) {
-						echo '<div class="row"><div class="span12"><label class="text-info" for="'.$meta['wpem_custom'][0].'">'.$meta['wpem_custom'][0].'</label>';
+						echo '<tr><td colspan="2"><label class="text-info" for="'.$meta['wpem_custom'][0].'">'.$meta['wpem_custom'][0].'</label>';
 						if($meta['wpem_custom2'][0] == 'text') {
 							echo '<input type="text" class="span12" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'">';
 						} else {
 							echo '<textarea class="span12" rows="5" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'"></textarea>';
 						}
-						echo "</div></div>";
+						echo "</td></tr>";
 					}
 					
-		echo '<br><br>
-					<legend>Disclaimer and Signature</legend>
+					echo "</table>";
+					
+		echo '<legend>Disclaimer and Signature</legend>
 					<p><em>'.wpautop($options['disclaimer']).'</em></p>
-					<div class="row">
-						<div class="span12">
-							<label for="signature" class="text-info">Signature</label>
-							<input type="text" id="signature" class="span12" name="signature" placeholder="Ex: John Smith">
-						</div>
-					</div>';
+					<table class="table">
+						<tr>
+							<td>
+								<label for="signature" class="text-info">Signature</label>
+								<input type="text" id="signature" class="span12" name="signature" placeholder="Ex: John Smith">
+							</td>
+						</tr>
+					</table>';
 					
 			if($meta['wpem_resume'][0] == 'Yes') {
-				echo '<br><br>
-							<legend>Resume & Cover Letter</legend>
+				echo '<legend>Resume & Cover Letter</legend>
 							<form id="resumeform">
 							<button class="btn btn-primary disabled" disabled="disabled" id="resume"><i class="icon-cloud-upload"></i> Attach Resume</button>
 							<input id="resumefile" name="resumefile" type="file" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" width="20">
+							<input type="hidden" name="updir" value="'.$upload_dir['basedir'].'">
 							</form>
-							<strong>If you include a resume, completion of the fields below is completely optional.</strong> <br><br>';
+							<strong>If you include a resume, completion of the fields below is completely optional.</strong><br>';
 				// Code for the resume uploader
 				echo '<script type="text/javascript">
 			   	 		$(document).ready(function () {
@@ -427,523 +456,531 @@
 							</script>';
 			}			
 					
-		echo '<br><br>
-					<legend>Further Information</legend>
-					<div class="row">
-						<div class="span6">
-							<label for="available">Date Available</label>
-							<input type="text" id="available" class="span6" name="available">
-						</div>
-						<div class="span6">
-							<label for="salary">Desired Salary</label>
-							<input type="text" id="salary" class="span6" name="salary">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="experience">Experience & Knowledge for this Position</label>
-							<textarea id="experience" class="span12" rows="5" name="experience"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="skills">Special Skills Applicable to Position</label>
-							<textarea id="skills" class="span12" rows="5" name="skills"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="citizen">Are you a citizen of the United States?</label>
-							<select name="citizen" id="citizen" class="span6">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-						<div class="span6">
-							<label for="authorized">If no, are you authorized to work in the U.S.?</label>
-							<select name="authorized" id="authorized" class="span6">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="relocate">Would you be willing to relocate?</label>
-							<select name="relocate" id="relocate" class="span6">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-						<div class="span6">
-							<label for="relocate2">If yes, explain</label>
-							<input type="text" id="relocate2" class="span6" name="relocate2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="previous">Have you worked for one or more of our companies before?</label>
-							<select name="previous" id="previous" class="span6">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-						<div class="span6">
-							<label for="previous2">If so, which and when?</label>
-							<input type="text" id="previous2" class="span6" name="previous2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="felony">Have you ever been convicted of a felony?</label>
-							<select name="felony" id="felony" class="span6">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-						<div class="span6">
-							<label for="felony2">If yes, explain</label>
-							<input type="text" id="felony2" class="span6" name="felony2">
-						</div>
-					</div>';
+		echo '<br><legend>Further Information</legend>
+					<table class="table">
+						<tr>
+							<td>
+								<label for="available">Date Available</label>
+								<input type="text" id="available" class="span6" name="available">
+							</td>
+							<td>
+								<label for="salary">Desired Salary</label>
+								<input type="text" id="salary" class="span6" name="salary">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<label for="experience">Experience & Knowledge for this Position</label>
+								<textarea id="experience" class="span12" rows="5" name="experience"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<label for="skills">Special Skills Applicable to Position</label>
+								<textarea id="skills" class="span12" rows="5" name="skills"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label for="citizen">Are you a citizen of the United States?</label>
+								<select name="citizen" id="citizen" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+							<td>
+								<label for="authorized">If no, are you authorized to work in the U.S.?</label>
+								<select name="authorized" id="authorized" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label for="relocate">Would you be willing to relocate?</label>
+								<select name="relocate" id="relocate" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+							<td>
+								<label for="relocate2">If yes, explain</label>
+								<input type="text" id="relocate2" class="span6" name="relocate2">
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label for="previous">Have you worked for one or more of our companies before?</label>
+								<select name="previous" id="previous" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+							<td>
+								<label for="previous2">If so, which and when?</label>
+								<input type="text" id="previous2" class="span6" name="previous2">
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label for="felony">Have you ever been convicted of a felony?</label>
+								<select name="felony" id="felony" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+							<td>
+								<label for="felony2">If yes, explain</label>
+								<input type="text" id="felony2" class="span6" name="felony2">
+							</td>
+						</tr>
+					</table>';
 					
 					if(isset($meta['wpem_edu'][0]) && $meta['wpem_edu'][0] == 'Yes') {
 					echo '
-					<br><br>
 					<legend>Education History</legend>
-					<div class="row">
-						<div class="span6">
-							<label for="hs">High School</label>
-							<input type="text" id="hs" class="span6" name="hs" placeholder="Ex: Willmar Senior High School">
-						</div>
-						<div class="span6">
-							<label for="hs2">City, State</label>
-							<input type="text" id="hs2" class="span6" name="hs2" placeholder="Ex: Willmar, MN">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span4">
-							<label for="hs3">From</label>
-							<input type="text" id="hs3" class="span4" name="hs3" placeholder="Ex: 2008">
-						</div>
-						<div class="span4">
-							<label for="hs4">To</label>
-							<input type="text" id="hs4" class="span4" name="hs4" placeholder="Ex: 2012">
-						</div>
-						<div class="span4">
-							<label for="hs5">Did you graduate?</label>
-							<select name="hs5" id="hs5" class="span4">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-					</div>
-					<hr>
-					<div class="row">
-						<div class="span6">
-							<label for="c11">College</label>
-							<input type="text" id="c11" class="span6" name="c11" placeholder="Ex: University of Minnesota">
-						</div>
-						<div class="span6">
-							<label for="c12">City, State</label>
-							<input type="text" id="c12" class="span6" name="c12" placeholder="Ex: Minneapolis, MN">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span3">
-							<label for="c13">From</label>
-							<input type="text" id="c13" class="span3" name="c13" placeholder="Ex: 2008">
-						</div>
-						<div class="span3">
-							<label for="c14">To</label>
-							<input type="text" id="c14" class="span3" name="c14" placeholder="Ex: 2012">
-						</div>
-						<div class="span3">
-							<label for="c15">Did you graduate?</label>
-							<select name="c15" id="c15" class="span3">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-						<div class="span3">
-							<label for="c16">Degree</label>
-							<input type="text" id="c16" class="span3" name="c16" placeholder="Ex: BS in Computer Science">
-						</div>
-					</div>
-					<hr>
-					<div class="row">
-						<div class="span6">
-							<label for="c21">College</label>
-							<input type="text" id="c21" class="span6" name="c21" placeholder="Ex: University of Minnesota">
-						</div>
-						<div class="span6">
-							<label for="c22">City, State</label>
-							<input type="text" id="c22" class="span6" name="c22" placeholder="Ex: Minneapolis, MN">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span3">
-							<label for="c23">From</label>
-							<input type="text" id="c23" class="span3" name="c23" placeholder="Ex: 2008">
-						</div>
-						<div class="span3">
-							<label for="c24">To</label>
-							<input type="text" id="c24" class="span3" name="c24" placeholder="Ex: 2012">
-						</div>
-						<div class="span3">
-							<label for="c25">Did you graduate?</label>
-							<select name="c25" id="c25" class="span3">
-								<option></option>
-								<option value="Yes">YES</option>
-								<option value="No">NO</option>
-							</select>
-						</div>
-						<div class="span3">
-							<label for="c26">Degree</label>
-							<input type="text" id="c26" class="span3" name="c26" placeholder="Ex: BS in Computer Science">
-						</div>
-					</div>
-					<hr>
-					<div class="row">
-						<div class="span12">
-							<label for="objectives">Briefly Describe Your Career Objectives</label>
-							<textarea id="objectives" class="span12" rows="5" name="objectives"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="etc">Special Training, Experience, or Pertinent Data</label>
-							<textarea id="etc" class="span12" rows="5" name="etc"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="referral">How Did You Hear About Us?</label>
-							<textarea id="referral" class="span12" rows="5" name="referral"></textarea>
-						</div>
-					</div>';
+					<table class="table">
+						<tr>
+							<td colspan="3">
+								<label for="hs">High School</label>
+								<input type="text" id="hs" class="span6" name="hs" placeholder="Ex: Willmar Senior High School">
+							</td>
+							<td colspan="3">
+								<label for="hs2">City, State</label>
+								<input type="text" id="hs2" class="span6" name="hs2" placeholder="Ex: Willmar, MN">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<label for="hs3">From</label>
+								<input type="text" id="hs3" class="span4" name="hs3" placeholder="Ex: 2008">
+							</td>
+							<td colspan="2">
+								<label for="hs4">To</label>
+								<input type="text" id="hs4" class="span4" name="hs4" placeholder="Ex: 2012">
+							</td>
+							<td colspan="2">
+								<label for="hs5">Did you graduate?</label>
+								<select name="hs5" id="hs5" class="span4">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+						</tr>
+						<tr><td colspan="6"></td></tr>
+						<tr>
+							<td colspan="3">
+								<label for="c11">College</label>
+								<input type="text" id="c11" class="span6" name="c11" placeholder="Ex: University of Minnesota">
+							</td>
+							<td colspan="3">
+								<label for="c12">City, State</label>
+								<input type="text" id="c12" class="span6" name="c12" placeholder="Ex: Minneapolis, MN">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="c13">From</label>
+								<input type="text" id="c13" class="span6" name="c13" placeholder="Ex: 2008">
+							</td>
+							<td colspan="3">
+								<label for="c14">To</label>
+								<input type="text" id="c14" class="span6" name="c14" placeholder="Ex: 2012">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="c15">Did you graduate?</label>
+								<select name="c15" id="c15" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+							<td colspan="3">
+								<label for="c16">Degree</label>
+								<input type="text" id="c16" class="span6" name="c16" placeholder="Ex: BS in Computer Science">
+							</td>
+						</tr>
+						<tr><td colspan="6"></td></tr>
+						<tr>
+							<td colspan="3">
+								<label for="c21">College</label>
+								<input type="text" id="c21" class="span6" name="c21" placeholder="Ex: University of Minnesota">
+							</td>
+							<td colspan="3">
+								<label for="c22">City, State</label>
+								<input type="text" id="c22" class="span6" name="c22" placeholder="Ex: Minneapolis, MN">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="c23">From</label>
+								<input type="text" id="c23" class="span6" name="c23" placeholder="Ex: 2008">
+							</td>
+							<td colspan="3">
+								<label for="c24">To</label>
+								<input type="text" id="c24" class="span6" name="c24" placeholder="Ex: 2012">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="c25">Did you graduate?</label>
+								<select name="c25" id="c25" class="span6">
+									<option></option>
+									<option value="Yes">YES</option>
+									<option value="No">NO</option>
+								</select>
+							</td>
+							<td colspan="3">
+								<label for="c26">Degree</label>
+								<input type="text" id="c26" class="span6" name="c26" placeholder="Ex: BS in Computer Science">
+							</td>
+						</tr>
+						<tr><td colspan="6"></td></tr>
+						<tr>
+							<td colspan="6">
+								<label for="objectives">Briefly Describe Your Career Objectives</label>
+								<textarea id="objectives" class="span12" rows="5" name="objectives"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="etc">Special Training, Experience, or Pertinent Data</label>
+								<textarea id="etc" class="span12" rows="5" name="etc"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="referral">How Did You Hear About Us?</label>
+								<textarea id="referral" class="span12" rows="5" name="referral"></textarea>
+							</td>
+						</td>
+					</table>';
 					}
 					
 					if(isset($meta['wpem_mil'][0]) && $meta['wpem_mil'][0] == 'Yes') {
 					echo '
-					<br><br>
 					<legend>Military Service</legend>
-					<div class="row">
-						<div class="span6">
-							<label for="branch">Branch</label>
-							<input type="text" id="branch" class="span6" name="branch">
-						</div>
-						<div class="span3">
-							<label for="mi1">From</label>
-							<input type="text" id="mi1" class="span3" name="mi1">
-						</div>
-						<div class="span3">
-							<label for="mi2">To</label>
-							<input type="text" id="mi2" class="span3" name="mi2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="mi3">Rank at Discharge</label>
-							<input type="text" id="mi3" class="span6" name="mi3">
-						</div>
-						<div class="span6">
-							<label for="mi4">Type of Discharge</label>
-							<input type="text" id="mi4" class="span6" name="mi4">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="mi5">If Other than Honorable, Explain</label>
-							<textarea id="mi5" class="span12" rows="3" name="mi5"></textarea>
-						</div>
-					</div>';
+					<table class="table">
+						<tr>
+							<td colspan="6">
+								<label for="branch">Branch</label>
+								<input type="text" id="branch" class="span6" name="branch">
+							</td>
+							<td colspan="3">
+								<label for="mi1">From</label>
+								<input type="text" id="mi1" class="span3" name="mi1">
+							</td>
+							<td colspan="3">
+								<label for="mi2">To</label>
+								<input type="text" id="mi2" class="span3" name="mi2">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="mi3">Rank at Discharge</label>
+								<input type="text" id="mi3" class="span6" name="mi3">
+							</td>
+							<td colspan="6">
+								<label for="mi4">Type of Discharge</label>
+								<input type="text" id="mi4" class="span6" name="mi4">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								<label for="mi5">If Other than Honorable, Explain</label>
+								<textarea id="mi5" class="span12" rows="3" name="mi5"></textarea>
+							</td>
+						</tr>
+					</table>';
 					}
 					
 					if(isset($meta['wpem_pem'][0]) && $meta['wpem_pem'][0] == 'Yes') {
 					echo '
-					<br><br>
 					<legend>Previous Employment</legend>
 					<em>List Present or Most Recent Employer First</em>
-					<br><br>
-					<div class="row">
-						<div class="span6">
-							<label for="peco1">Company</label>
-							<input type="text" id="peco1" class="span6" name="pec1">
-						</div>
-						<div class="span6">
-							<label for="pead1">Address</label>
-							<input type="text" id="pead1" class="span6" name="pead1">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pesu1">Supervisor</label>
-							<input type="text" id="pesu1" class="span6" name="pesu1">
-						</div>
-						<div class="span6">
-							<label for="peph1">Phone</label>
-							<input type="text" id="peph1" class="span6" name="peph1">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pejt1">Job Title</label>
-							<input type="text" id="pejt1" class="span6" name="pejt1">
-						</div>
-						<div class="span3">
-							<label for="pess1">Starting Salary</label>
-							<input type="text" id="pess1" class="span3" name="pess1">
-						</div>
-						<div class="span3">
-							<label for="pees1">Ending Salary</label>
-							<input type="text" id="pees1" class="span3" name="pees1">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="peres1">Responsibilities</label>
-							<textarea id="peres1" class="span12" rows="5" name="peres1"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span3">
-							<label for="pefr1">From</label>
-							<input type="text" id="pefr1" class="span3" name="pefr1">
-						</div>
-						<div class="span3">
-							<label for="peto1">To</label>
-							<input type="text" id="peto1" class="span3" name="peto1">
-						</div>
-						<div class="span6">
-							<label for="perl1">Reason for Leaving</label>
-							<input type="text" id="perl1" class="span6" name="perl1">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							May we contact your previous supervisor for a reference?
-							<label for="peref1" class="radio">
-								Yes
-								<input type="radio" name="peref1" id="peref1" value="yes">
-							</label>
-							<label for="peref1" class="radio">
-								No
-								<input type="radio" name="peref1" id="peref1" value="no">
-							</label>
-						</div>
-					</div>
-					<hr>
-					<div class="row">
-						<div class="span6">
-							<label for="peco2">Company</label>
-							<input type="text" id="peco2" class="span6" name="pec2">
-						</div>
-						<div class="span6">
-							<label for="pead2">Address</label>
-							<input type="text" id="pead2" class="span6" name="pead2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pesu2">Supervisor</label>
-							<input type="text" id="pesu2" class="span6" name="pesu2">
-						</div>
-						<div class="span6">
-							<label for="peph2">Phone</label>
-							<input type="text" id="peph2" class="span6" name="peph2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pejt2">Job Title</label>
-							<input type="text" id="pejt2" class="span6" name="pejt2">
-						</div>
-						<div class="span3">
-							<label for="pess2">Starting Salary</label>
-							<input type="text" id="pess2" class="span3" name="pess2">
-						</div>
-						<div class="span3">
-							<label for="pees2">Ending Salary</label>
-							<input type="text" id="pees2" class="span3" name="pees2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="peres2">Responsibilities</label>
-							<textarea id="peres2" class="span12" rows="5" name="peres2"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span3">
-							<label for="pefr2">From</label>
-							<input type="text" id="pefr2" class="span3" name="pefr2">
-						</div>
-						<div class="span3">
-							<label for="peto2">To</label>
-							<input type="text" id="peto2" class="span3" name="peto2">
-						</div>
-						<div class="span6">
-							<label for="perl2">Reason for Leaving</label>
-							<input type="text" id="perl2" class="span6" name="perl2">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							May we contact your previous supervisor for a reference?
-							<label for="peref2" class="radio">
-								Yes
-								<input type="radio" name="peref2" id="peref2" value="yes">
-							</label>
-							<label for="peref2" class="radio">
-								No
-								<input type="radio" name="peref2" id="peref2" value="no">
-							</label>
-						</div>
-					</div>
-					<hr>
-					<div class="row">
-						<div class="span6">
-							<label for="peco3">Company</label>
-							<input type="text" id="peco3" class="span6" name="pec3">
-						</div>
-						<div class="span6">
-							<label for="pead3">Address</label>
-							<input type="text" id="pead3" class="span6" name="pead3">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pesu3">Supervisor</label>
-							<input type="text" id="pesu3" class="span6" name="pesu3">
-						</div>
-						<div class="span6">
-							<label for="peph3">Phone</label>
-							<input type="text" id="peph3" class="span6" name="peph3">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pejt3">Job Title</label>
-							<input type="text" id="pejt3" class="span6" name="pejt3">
-						</div>
-						<div class="span3">
-							<label for="pess3">Starting Salary</label>
-							<input type="text" id="pess3" class="span3" name="pess3">
-						</div>
-						<div class="span3">
-							<label for="pees3">Ending Salary</label>
-							<input type="text" id="pees3" class="span3" name="pees3">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="peres3">Responsibilities</label>
-							<textarea id="peres3" class="span12" rows="5" name="peres3"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span3">
-							<label for="pefr3">From</label>
-							<input type="text" id="pefr3" class="span3" name="pefr3">
-						</div>
-						<div class="span3">
-							<label for="peto3">To</label>
-							<input type="text" id="peto3" class="span3" name="peto3">
-						</div>
-						<div class="span6">
-							<label for="perl3">Reason for Leaving</label>
-							<input type="text" id="perl3" class="span6" name="perl3">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							May we contact your previous supervisor for a reference?
-							<label for="peref3" class="radio">
-								Yes
-								<input type="radio" name="peref3" id="peref3" value="yes">
-							</label>
-							<label for="peref3" class="radio">
-								No
-								<input type="radio" name="peref3" id="peref3" value="no">
-							</label>
-						</div>
-					</div>
-					<hr>
-					<div class="row">
-						<div class="span6">
-							<label for="peco4">Company</label>
-							<input type="text" id="peco4" class="span6" name="pec4">
-						</div>
-						<div class="span6">
-							<label for="pead4">Address</label>
-							<input type="text" id="pead4" class="span6" name="pead4">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pesu4">Supervisor</label>
-							<input type="text" id="pesu4" class="span6" name="pesu4">
-						</div>
-						<div class="span6">
-							<label for="peph4">Phone</label>
-							<input type="text" id="peph4" class="span6" name="peph4">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span6">
-							<label for="pejt4">Job Title</label>
-							<input type="text" id="pejt4" class="span6" name="pejt4">
-						</div>
-						<div class="span3">
-							<label for="pess4">Starting Salary</label>
-							<input type="text" id="pess4" class="span3" name="pess4">
-						</div>
-						<div class="span3">
-							<label for="pees4">Ending Salary</label>
-							<input type="text" id="pees4" class="span3" name="pees4">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							<label for="peres4">Responsibilities</label>
-							<textarea id="peres4" class="span12" rows="5" name="peres4"></textarea>
-						</div>
-					</div>
-					<div class="row">
-						<div class="span3">
-							<label for="pefr4">From</label>
-							<input type="text" id="pefr4" class="span3" name="pefr4">
-						</div>
-						<div class="span3">
-							<label for="peto4">To</label>
-							<input type="text" id="peto4" class="span3" name="peto4">
-						</div>
-						<div class="span6">
-							<label for="perl4">Reason for Leaving</label>
-							<input type="text" id="perl4" class="span6" name="perl4">
-						</div>
-					</div>
-					<div class="row">
-						<div class="span12">
-							May we contact your previous supervisor for a reference?
-							<label for="peref4" class="radio">
-								Yes
-								<input type="radio" name="peref4" id="peref4" value="yes">
-							</label>
-							<label for="peref4" class="radio">
-								No
-								<input type="radio" name="peref4" id="peref4" value="no">
-							</label>
-						</div>
-					</div>';
+					
+					<table class="table">
+						<tr>
+							<td colspan="6">
+								<label for="peco1">Company</label>
+								<input type="text" id="peco1" class="span6" name="pec1">
+							</td>
+							<td colspan="6">
+								<label for="pead1">Address</label>
+								<input type="text" id="pead1" class="span6" name="pead1">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pesu1">Supervisor</label>
+								<input type="text" id="pesu1" class="span6" name="pesu1">
+							</td>
+							<td colspan="6">
+								<label for="peph1">Phone</label>
+								<input type="text" id="peph1" class="span6" name="peph1">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pejt1">Job Title</label>
+								<input type="text" id="pejt1" class="span6" name="pejt1">
+							</td>
+							<td colspan="3">
+								<label for="pess1">Starting Salary</label>
+								<input type="text" id="pess1" class="span3" name="pess1">
+							</td>
+							<td colspan="3">
+								<label for="pees1">Ending Salary</label>
+								<input type="text" id="pees1" class="span3" name="pees1">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								<label for="peres1">Responsibilities</label>
+								<textarea id="peres1" class="span12" rows="5" name="peres1"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="pefr1">From</label>
+								<input type="text" id="pefr1" class="span3" name="pefr1">
+							</td>
+							<td colspan="3">
+								<label for="peto1">To</label>
+								<input type="text" id="peto1" class="span3" name="peto1">
+							</td>
+							<td colspan="6">
+								<label for="perl1">Reason for Leaving</label>
+								<input type="text" id="perl1" class="span6" name="perl1">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								May we contact your previous supervisor for a reference?
+								<label for="peref1" class="radio">
+									Yes
+									<input type="radio" name="peref1" id="peref1" value="yes">
+								</label>
+								<label for="peref1" class="radio">
+									No
+									<input type="radio" name="peref1" id="peref1" value="no">
+								</label>
+							</td>
+						</tr>
+						<tr><td colspan="12"></td></tr>
+						<tr>
+							<td colspan="6">
+								<label for="peco2">Company</label>
+								<input type="text" id="peco2" class="span6" name="pec2">
+							</td>
+							<td colspan="6">
+								<label for="pead2">Address</label>
+								<input type="text" id="pead2" class="span6" name="pead2">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pesu2">Supervisor</label>
+								<input type="text" id="pesu2" class="span6" name="pesu2">
+							</td>
+							<td colspan="6">
+								<label for="peph2">Phone</label>
+								<input type="text" id="peph2" class="span6" name="peph2">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pejt2">Job Title</label>
+								<input type="text" id="pejt2" class="span6" name="pejt2">
+							</td>
+							<td colspan="3">
+								<label for="pess2">Starting Salary</label>
+								<input type="text" id="pess2" class="span3" name="pess2">
+							</td>
+							<td colspan="3">
+								<label for="pees2">Ending Salary</label>
+								<input type="text" id="pees2" class="span3" name="pees2">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								<label for="peres2">Responsibilities</label>
+								<textarea id="peres2" class="span12" rows="5" name="peres2"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="pefr2">From</label>
+								<input type="text" id="pefr2" class="span3" name="pefr2">
+							</td>
+							<td colspan="3">
+								<label for="peto2">To</label>
+								<input type="text" id="peto2" class="span3" name="peto2">
+							</td>
+							<td colspan="6">
+								<label for="perl2">Reason for Leaving</label>
+								<input type="text" id="perl2" class="span6" name="perl2">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								May we contact your previous supervisor for a reference?
+								<label for="peref2" class="radio">
+									Yes
+									<input type="radio" name="peref2" id="peref2" value="yes">
+								</label>
+								<label for="peref2" class="radio">
+									No
+									<input type="radio" name="peref2" id="peref2" value="no">
+								</label>
+							</td>
+						</tr>
+						<tr><td colspan="12"></td></tr>
+						<tr>
+							<td colspan="6">
+								<label for="peco3">Company</label>
+								<input type="text" id="peco3" class="span6" name="pec3">
+							</td>
+							<td colspan="6">
+								<label for="pead3">Address</label>
+								<input type="text" id="pead3" class="span6" name="pead3">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pesu3">Supervisor</label>
+								<input type="text" id="pesu3" class="span6" name="pesu3">
+							</td>
+							<td colspan="6">
+								<label for="peph3">Phone</label>
+								<input type="text" id="peph3" class="span6" name="peph3">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pejt3">Job Title</label>
+								<input type="text" id="pejt3" class="span6" name="pejt3">
+							</td>
+							<td colspan="3">
+								<label for="pess3">Starting Salary</label>
+								<input type="text" id="pess3" class="span3" name="pess3">
+							</td>
+							<td colspan="3">
+								<label for="pees3">Ending Salary</label>
+								<input type="text" id="pees3" class="span3" name="pees3">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								<label for="peres3">Responsibilities</label>
+								<textarea id="peres3" class="span12" rows="5" name="peres3"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="pefr3">From</label>
+								<input type="text" id="pefr3" class="span3" name="pefr3">
+							</td>
+							<td colspan="3">
+								<label for="peto3">To</label>
+								<input type="text" id="peto3" class="span3" name="peto3">
+							</td>
+							<td colspan="6">
+								<label for="perl3">Reason for Leaving</label>
+								<input type="text" id="perl3" class="span6" name="perl3">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								May we contact your previous supervisor for a reference?
+								<label for="peref3" class="radio">
+									Yes
+									<input type="radio" name="peref3" id="peref3" value="yes">
+								</label>
+								<label for="peref3" class="radio">
+									No
+									<input type="radio" name="peref3" id="peref3" value="no">
+								</label>
+							</td>
+						</tr>
+						<tr><td colspan="12"></td></tr>
+						<tr>
+							<td colspan="6">
+								<label for="peco4">Company</label>
+								<input type="text" id="peco4" class="span6" name="pec4">
+							</td>
+							<td colspan="6">
+								<label for="pead4">Address</label>
+								<input type="text" id="pead4" class="span6" name="pead4">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pesu4">Supervisor</label>
+								<input type="text" id="pesu4" class="span6" name="pesu4">
+							</td>
+							<td colspan="6">
+								<label for="peph4">Phone</label>
+								<input type="text" id="peph4" class="span6" name="peph4">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="6">
+								<label for="pejt4">Job Title</label>
+								<input type="text" id="pejt4" class="span6" name="pejt4">
+							</td>
+							<td colspan="3">
+								<label for="pess4">Starting Salary</label>
+								<input type="text" id="pess4" class="span3" name="pess4">
+							</td>
+							<td colspan="3">
+								<label for="pees4">Ending Salary</label>
+								<input type="text" id="pees4" class="span3" name="pees4">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								<label for="peres4">Responsibilities</label>
+								<textarea id="peres4" class="span12" rows="5" name="peres4"></textarea>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<label for="pefr4">From</label>
+								<input type="text" id="pefr4" class="span3" name="pefr4">
+							</td>
+							<td colspan="3">
+								<label for="peto4">To</label>
+								<input type="text" id="peto4" class="span3" name="peto4">
+							</td>
+							<td colspan="6">
+								<label for="perl4">Reason for Leaving</label>
+								<input type="text" id="perl4" class="span6" name="perl4">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="12">
+								May we contact your previous supervisor for a reference?
+								<label for="peref4" class="radio">
+									Yes
+									<input type="radio" name="peref4" id="peref4" value="yes">
+								</label>
+								<label for="peref4" class="radio">
+									No
+									<input type="radio" name="peref4" id="peref4" value="no">
+								</label>
+							</td>
+						</tr>
+					</table>';
 					}
 		if(strlen($reply) > 0) {
 			echo '<input type="hidden" id="reply" name="reply" value="'.$reply.'">';
