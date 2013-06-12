@@ -1,11 +1,8 @@
 wpjobs
 ======
+Wordpress plugin for managing job openings & applications.
 
-Contributors: aaronhuisinga
-Tags: employment, jobs, management
-Requires at least: 3.4
-Tested up to: 3.5.1
-Stable tag: trunk
+[Check out the plugin at Wordpress.org](http://wordpress.org/plugins/wp-employment/)
 
 Description
 -----------

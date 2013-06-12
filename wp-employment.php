@@ -4,7 +4,7 @@
 	Plugin URI: https://github.com/ahuisinga/wpjobs
 	Description: Integrates a simple system to list job openings, display them on a sleek and organized page, and accept applications via pre-formatted email messages.
 	Author: Aaron Huisinga
-	Version: 0.3
+	Version: 0.3.1
 	Author URI: https://huisinga.ws/
 	*/
 	
@@ -343,11 +343,11 @@
 	function wpem_apply($atts) {
 		wp_register_style( 'wpem_css', plugins_url('css/wpem.css', __FILE__) );
 	 	wp_enqueue_style('wpem_css');
-  	preg_match_all('!\d+!', $_SERVER["REQUEST_URI"], $pid);
-  	$pid = implode(' ', $pid[0]);
+  	$pid = $_GET['pos'];
     $post = get_post($pid); 
 		$title = $post->post_title;
 		$meta = get_post_meta($pid);
+		
 		// Fixes the paths for Windows
 		$upload_dir = wp_upload_dir();
 		$workaround = str_replace("\\", "|", $upload_dir['basedir']);
@@ -1025,9 +1025,11 @@
 		   	 				
 		   	 				var address = $("#address").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						experience = $("#experience").val().replace(/\r\n|\r|\n/g,"<br>");
-		   	 						skills = $("#skills").val().replace(/\r\n|\r|\n/g,"<br>");
-		   	 						reply = $("#reply").val().replace(/\r\n|\r|\n/g,"<br>");
-		   	 						
+		   	 						skills = $("#skills").val().replace(/\r\n|\r|\n/g,"<br>");';
+		   	 						if(strlen($reply) > 0) {
+		   	 			echo 'reply = $("#reply").val().replace(/\r\n|\r|\n/g,"<br>");';
+		   	 						}
+		   	 			echo '			
 			   	 			$.ajax({
 				 	 				url: "'.PLUGIN_PATH . 'resume.php",
 				 	 				data: {"pdir" : "'.$workaround.'",

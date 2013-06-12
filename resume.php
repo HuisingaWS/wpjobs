@@ -286,7 +286,7 @@ if(isset($_POST['pdir'])) {
 	}
 	
 	// Send an automatic response if it is requested
-	if(isset($_POST['reply'])) {
+	if(isset($_POST['reply']) && isset($_POST['email'])) {
 		$reply = new PHPMailer;
 		$reply->From = 'noreply@'.$_SERVER['HTTP_HOST'];
 		if(isset($_POST['rname']) && strlen($_POST['rname']) > 0) {
