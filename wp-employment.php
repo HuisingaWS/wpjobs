@@ -1,322 +1,361 @@
 <?php
-	/*
-	Plugin Name: WP Employment
-	Plugin URI: https://github.com/ahuisinga/wpjobs
-	Description: Integrates a simple system to list job openings, display them on a sleek and organized page, and accept applications via pre-formatted email messages.
-	Author: Aaron Huisinga
-	Version: 0.3.1
-	Author URI: https://huisinga.ws/
-	*/
-	
-	define( 'PLUGIN_PATH', plugin_dir_url(__FILE__) );
-	$upload_dir = wp_upload_dir();
-	
-	/* Initailaize Back-end */	
-	function wpem_admin_init() {
-		$page_title = "WP Job Openings Configuration";
-		$menu_title = "Job Openings";
-		$capability = "publish_posts";
-		$menu_slug = "wpem_config";
-		$function = "wpem_config_page";
-		$icon_url = "";
-		$position = "";
-		
-		add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function );
-	}
-	add_action('admin_menu', 'wpem_admin_init');
-	
-	/* Display a notice about adding shortcodes after plugin installation */
-	add_action('admin_notices', 'activate_plugin_notice');
-	function activate_plugin_notice() {
-		global $current_user ;
-	         $user_id = $current_user->ID;
-	  /* Check that the user hasn't already clicked to ignore the message */
-		if ( current_user_can('administrator') && !get_user_meta($user_id, 'notice_wpem_ignore') ) {
-	  	echo '<div class="updated"><p>'; 
-	    printf(__('The WP Employment plugin will not function until pages with the [WPEM] and [EMAPPLY] shortcodes are created. <span style="float: right;"><a href="%1$s">Hide Notice</a></span>'), '?notice_wpem_ignore=0');
-	    echo "</p></div>";
-		}
-	}
-	
-	add_action('admin_init', 'notice_wpem_ignore');
-	function notice_wpem_ignore() {
-		global $current_user;
-	         $user_id = $current_user->ID;
-	  if ( isset($_GET['notice_wpem_ignore']) && '0' == $_GET['notice_wpem_ignore'] ) {
-	  	add_user_meta($user_id, 'notice_wpem_ignore', 'true', true);
-		}
-	}
-	
-	
-	/* Load Default Settings */
-	function wpem_default_settings() {
-		$tmp = get_option('wpem_options');
-		if(!is_array($tmp)) {
-			$arr = array(
-				'companies' => ''
-			);
-			update_option('wpem_options', $arr);
-		}
-	}
-	register_activation_hook(__FILE__, 'wpem_default_settings');
-	
-	
-	/* Settings */
-	function wpem_settings_init() {
-	
-		add_settings_section('wpem_id', '', 'wpem_callback', 'wpem_page');
-		
-		register_setting( 'wpem_optiongroup', 'wpem_options' ); // General Settings
-		
-		/* Add fields to cover page settings */
-		add_settings_field('companies', 'Company Names', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'companies', 'type' => 'text', 'placeholder' => 'Company 1,Company 2') );
-		add_settings_field('applyp', 'Application Page', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'applyp', 'type' => 'text', 'placeholder' => 'Title of the page containing the [EMAPPLY] shortcode') );
-		add_settings_field('rname', 'Auto Reply From (Name)', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'rname', 'type' => 'text', 'placeholder' => 'Human Resources') );
-		add_settings_field('reply', 'Auto Reply Content', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'reply', 'type' => 'textarea', 'placeholder' => 'Email that will be sent to user when application is submitted') );
-		add_settings_field('disclaimer', 'Application Disclaimer', 'wpem_setting_string', 'wpem_page', 'wpem_id', array('id' => 'disclaimer', 'type' => 'textarea', 'placeholder' => 'Optional disclaimer to be displayed on the application') );
-	}
-	add_action('admin_init', 'wpem_settings_init');
-	
-		function wpem_callback() { echo '<p>Adjust settings for the employment plugin below. <br> <i>For the companies field, list the names of the different tags that you will give your posts, separated by commas. (Ex. Company1,Company2,...)</i></p>'; }
+/*
+ * Plugin WordPress Job Openings & Application Management
+ * Version: 0.5.0
+ * Plugin URI: https://github.com/aaronhuisinga/wpjobs
+ * Description: A WordPress plugin allowing administrators and editors to post available job openings, accept resumes & applications, and send batch emails to applicants.
+ * Author: Aaron Huisinga
+ * Author URI: https://github.com/aaronhuisinga
+ * Requires at least: 4.0
+ * Tested up to: 4.1
+ *
+ * @package WordPress Job Openings
+ * @author Aaron Huisinga
+ * @since 0.5.0
+ */
 
-		function wpem_setting_string( $args ) {
-			$options = get_option('wpem_options');
-			$id = $args['id'];
-			$type = $args['type'];
-			$placeholder = $args['placeholder'];
-			
-			switch($type) {
-				case 'text':
-					$class = ($args['class']) ? ' class="'.$args['class'].'"' : '';
-					echo "<input style='width: 90%;' placeholder='".$placeholder."' id='wpem_".$id."' name='wpem_options[".$id."]' type='text'". $class ." value='".$options[$id]."' />";
-					break;
-				case 'textarea':
-					$class = ($args['class']) ? ' class="'.$args['class'].'"' : '';
-					echo "<textarea style='width: 90%;' placeholder='".$placeholder."' rows='15' id='wpem_".$id."' name='wpem_options[".$id."]' ". $class .">".$options[$id]."</textarea>";
-					break;
-				default:
-					break;
-			}			
-		}
-	
-	/* Back-end Interface */	
-	function wpem_config_page() { ?>
-		<div class="wrap">
-			<div id="poststuff">
-				<?php echo '<h1 class="wpem-title">' . __( 'WP Job Openings Configuration', 'wpem-config' ) . '</h1>'; ?>
-				<div class="clear"></div>
-				
-				<div class="postbox">
-					<h3>Employment Settings</h3>
-					
-					<div class="inside">
-						<form method="post" action="options.php">
-							<?php settings_fields( 'wpem_optiongroup' ); ?>
-							<?php do_settings_sections( 'wpem_page' ); ?>
-							<?php submit_button(); ?>
-						</form>
-					</div>
-				</div><!-- #postbox -->
-			</div><!-- #poststuff -->
-		</div>
-	<?php }
-	
-	/* Register custom post type */
-	function wpem_post_type_init() {
-		$labels = array(
-			'name' => _x('Job Openings', 'post type general name'),
-			'singular_name' => _x('Job Opening', 'post type singular name'),
-			'add_new' => _x('Add New', 'timeline'),
-			'add_new_item' => __('Add New Job Opening'),
-			'edit_item' => __('Edit Job Opening'),
-			'new_item' => __('New Job Opening'),
-			'all_items' => __('All Job Openings'),
-			'view_item' => __('View Job Opening'),
-			'search_items' => __('Search Job Openings'),
-			'not_found' =>  __('No Job Openings found'),
-			'not_found_in_trash' => __('No Job Openings found in Trash'), 
-			'parent_item_colon' => '',
-			'menu_name' => __('Job Openings')
-		);
-		$args = array(
-			'labels' => $labels,
-			'public' => true,
-			'publicly_queryable' => true,
-			'show_ui' => true, 
-			'show_in_menu' => true, 
-			'query_var' => true,
-			'rewrite' => true,
-			'capability_type' => 'post',
-			'has_archive' => true, 
-			'hierarchical' => false,
-			'menu_position' => null,
-			'taxonomies' => array('post_tag'),
-			'supports' => array( 'title', 'editor' ),
-			'register_meta_box_cb' => 'wpem_meta_boxes'
-		); 
-		register_post_type( 'openings' , $args );
-		
-	}
-	add_action( 'init', 'wpem_post_type_init' );
-	
-	/* Metaboxes for Job Opening Post Type */
-	function wpem_meta_boxes() {
-		add_meta_box( 'openings-meta', 'Job Opening Details', 'wpem_meta_boxes_inner', 'openings' );
-	}
+if ( ! defined( 'ABSPATH' ) )
+	exit;
 
-	/* Prints the box content */
-	function wpem_meta_boxes_inner() {
-		global $post;
-		wp_nonce_field( plugin_basename( __FILE__ ), 'wpem_noncename' );
-		$meta = get_post_meta($post->ID);
-		?>
-		<div class="wpem-metabox">
-			<h4>General Job Details</h4>
-			<div class="wpem-metabox-item">
-				<label for="wpem_wage">Wage:</label>
-				<select id="wpem_wage" name="wpemmeta[wpem_wage]">
-					<option value=""></option>
-					<option value="Hourly" <? if($meta['wpem_wage'][0] == "Hourly"){ echo "selected"; } ?>>Hourly</option>
-					<option value="Hourly DOQ" <? if($meta['wpem_wage'][0] == "Hourly DOQ"){ echo "selected"; } ?>>Hourly DOQ</option>
-					<option value="Negotiable" <? if($meta['wpem_wage'][0] == "Negotiable"){ echo "selected"; } ?>>Negotiable</option>
-					<option value="Salaried" <? if($meta['wpem_wage'][0] == "Salaried"){ echo "selected"; } ?>>Salaried</option>
-				</select>
+if ( ! defined( 'WP_EMPLOYMENT_PLUGIN_PATH' ) )
+	define( 'WP_EMPLOYMENT_PLUGIN_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
+
+require_once( 'classes/class-wp-employment.php' );
+
+global $wp_employment;
+$wp_employment = new WP_Employment( __FILE__ );
+
+if ( is_admin() ) {
+	require_once( 'classes/class-wp-employment-admin.php' );
+	$wp_employment_admin = new WP_Employment_Admin( __FILE__ );
+}
+
+
+define( 'PLUGIN_PATH', plugin_dir_url( __FILE__ ) );
+$upload_dir = wp_upload_dir();
+
+
+
+
+function wpem_callback()
+{
+	echo '<p>Adjust settings for the employment plugin below. <br> <i>For the companies field, list the names of the different tags that you will give your posts, separated by commas. (Ex. Company1,Company2,...)</i></p>';
+}
+
+function wpem_setting_string( $args )
+{
+	$options     = get_option( 'wpem_options' );
+	$id          = $args['id'];
+	$type        = $args['type'];
+	$placeholder = $args['placeholder'];
+
+	switch ( $type ) {
+		case 'text':
+			$class = ( $args['class'] ) ? ' class="' . $args['class'] . '"' : '';
+			echo "<input style='width: 90%;' placeholder='" . $placeholder . "' id='wpem_" . $id . "' name='wpem_options[" . $id . "]' type='text'" . $class . " value='" . $options[ $id ] . "' />";
+			break;
+		case 'textarea':
+			$class = ( $args['class'] ) ? ' class="' . $args['class'] . '"' : '';
+			echo "<textarea style='width: 90%;' placeholder='" . $placeholder . "' rows='15' id='wpem_" . $id . "' name='wpem_options[" . $id . "]' " . $class . ">" . $options[ $id ] . "</textarea>";
+			break;
+		default:
+			break;
+	}
+}
+
+/* Back-end Interface */
+function wpem_config_page()
+{ ?>
+	<div class="wrap">
+		<div id="poststuff">
+			<?php echo '<h1 class="wpem-title">' . __( 'WP Job Openings Configuration', 'wpem-config' ) . '</h1>'; ?>
+			<div class="clear"></div>
+
+			<div class="postbox">
+				<h3>Employment Settings</h3>
+
+				<div class="inside">
+					<form method="post" action="options.php">
+						<?php settings_fields( 'wpem_optiongroup' ); ?>
+						<?php do_settings_sections( 'wpem_page' ); ?>
+						<?php submit_button(); ?>
+					</form>
+				</div>
 			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_hours">Hours:</label>
-				<select id="wpem_hours" name="wpemmeta[wpem_hours]">
-					<option value=""></option>
-					<option value="Full-Time" <? if($meta['wpem_hours'][0] == "Full-Time"){ echo "selected"; } ?>>Full-Time</option>
-					<option value="Full-Time (First Shift)" <? if($meta['wpem_hours'][0] == "Full-Time (First Shift)"){ echo "selected"; } ?>>Full-Time (First Shift)</option>
-					<option value="Full-Time (Second Shift)" <? if($meta['wpem_hours'][0] == "Full-Time (Second Shift)"){ echo "selected"; } ?>>Full-Time (Second Shift)</option>
-					<option value="Full-Time 12 Hr Shifts" <? if($meta['wpem_hours'][0] == "Full-Time 12 Hr Shifts"){ echo "selected"; } ?>>Full-Time 12 Hr Shifts</option>
-					<option value="Part-Time" <? if($meta['wpem_hours'][0] == "Part-Time"){ echo "selected"; } ?>>Part-Time</option>
-					<option value="Part-Time (First Shift)" <? if($meta['wpem_hours'][0] == "Part-Time (First Shift)"){ echo "selected"; } ?>>Part-Time (First Shift)</option>
-					<option value="Part-Time (Second Shift)" <? if($meta['wpem_hours'][0] == "Part-Time (Second Shift)"){ echo "selected"; } ?>>Part-Time (Second Shift)</option>
-				</select>
-			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_contact">Contact:</label>
-				<input type="text" style="width: 70%;" id="wpem_contact" name="wpemmeta[wpem_contact]" value="<?php echo $meta['wpem_contact'][0]; ?>">
-			</div>
-			
-			<h4>Job Application Details</h4>
-			<div class="wpem-metabox-item">
-				<label for="wpem_resume">Resume Attachment:</label>
-				<select id="wpem_resume" name="wpemmeta[wpem_resume]">
-					<option value="Yes" <? if($meta['wpem_resume'][0] == "Yes"){ echo "selected"; } ?>>Yes</option>
-					<option value="No" <? if($meta['wpem_resume'][0] == "No"){ echo "selected"; } ?>>No</option>
-				</select>
-			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_custom">Custom Field Name (optional):</label>
-				<input type="text" style="width: 70%;" id="wpem_custom" name="wpemmeta[wpem_custom]" value="<?php echo $meta['wpem_custom'][0]; ?>">
-			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_custom2">Custom Field Type (optional):</label>
-				<select id="wpem_custom2" name="wpemmeta[wpem_custom2]">
-					<option value=""></option>
-					<option value="text" <? if($meta['wpem_custom2'][0] == "text"){ echo "selected"; } ?>>Text</option>
-					<option value="textarea" <? if($meta['wpem_custom2'][0] == "textarea"){ echo "selected"; } ?>>Textarea</option>
-				</select>
-			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_edu">Display Education History:</label>
-				<select id="wpem_edu" name="wpemmeta[wpem_edu]">
-					<option value="Yes" <? if($meta['wpem_edu'][0] == "Yes"){ echo "selected"; } ?>>Yes</option>
-					<option value="No" <? if($meta['wpem_edu'][0] == "No"){ echo "selected"; } ?>>No</option>
-				</select>
-			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_mil">Display Military Service:</label>
-				<select id="wpem_mil" name="wpemmeta[wpem_mil]">
-					<option value="Yes" <? if($meta['wpem_mil'][0] == "Yes"){ echo "selected"; } ?>>Yes</option>
-					<option value="No" <? if($meta['wpem_mil'][0] == "No"){ echo "selected"; } ?>>No</option>
-				</select>
-			</div>
-			<div class="wpem-metabox-item">
-				<label for="wpem_pem">Display Previous Employment:</label>
-				<select id="wpem_pem" name="wpemmeta[wpem_pem]">
-					<option value="Yes" <? if($meta['wpem_pem'][0] == "Yes"){ echo "selected"; } ?>>Yes</option>
-					<option value="No" <? if($meta['wpem_pem'][0] == "No"){ echo "selected"; } ?>>No</option>
-				</select>
-			</div>
-			<br>
-			<input type="submit" class="button" name="wpem_meta_submit" value="Save Job Opening Details">
+			<!-- #postbox -->
 		</div>
-		<?php
+		<!-- #poststuff -->
+	</div>
+<?php }
+
+/* Register custom post type */
+function wpem_post_type_init()
+{
+	$labels = array(
+		'name'               => _x( 'Job Openings', 'post type general name' ),
+		'singular_name'      => _x( 'Job Opening', 'post type singular name' ),
+		'add_new'            => _x( 'Add New', 'timeline' ),
+		'add_new_item'       => __( 'Add New Job Opening' ),
+		'edit_item'          => __( 'Edit Job Opening' ),
+		'new_item'           => __( 'New Job Opening' ),
+		'all_items'          => __( 'All Job Openings' ),
+		'view_item'          => __( 'View Job Opening' ),
+		'search_items'       => __( 'Search Job Openings' ),
+		'not_found'          => __( 'No Job Openings found' ),
+		'not_found_in_trash' => __( 'No Job Openings found in Trash' ),
+		'parent_item_colon'  => '',
+		'menu_name'          => __( 'Job Openings' )
+	);
+	$args   = array(
+		'labels'               => $labels,
+		'public'               => true,
+		'publicly_queryable'   => true,
+		'show_ui'              => true,
+		'show_in_menu'         => true,
+		'query_var'            => true,
+		'rewrite'              => true,
+		'capability_type'      => 'post',
+		'has_archive'          => true,
+		'hierarchical'         => false,
+		'menu_position'        => null,
+		'taxonomies'           => array( 'post_tag' ),
+		'supports'             => array( 'title', 'editor' ),
+		'register_meta_box_cb' => 'wpem_meta_boxes'
+	);
+	register_post_type( 'openings', $args );
+
+}
+
+add_action( 'init', 'wpem_post_type_init' );
+
+/* Metaboxes for Job Opening Post Type */
+function wpem_meta_boxes()
+{
+	add_meta_box( 'openings-meta', 'Job Opening Details', 'wpem_meta_boxes_inner', 'openings' );
+}
+
+/* Prints the box content */
+function wpem_meta_boxes_inner()
+{
+	global $post;
+	wp_nonce_field( plugin_basename( __FILE__ ), 'wpem_noncename' );
+	$meta = get_post_meta( $post->ID );
+	?>
+	<div class="wpem-metabox">
+		<h4>General Job Details</h4>
+
+		<div class="wpem-metabox-item">
+			<label for="wpem_wage">Wage:</label>
+			<select id="wpem_wage" name="wpemmeta[wpem_wage]">
+				<option value=""></option>
+				<option value="Hourly" <? if ( $meta['wpem_wage'][0] == "Hourly" ) {
+					echo "selected";
+				} ?>>Hourly
+				</option>
+				<option value="Hourly DOQ" <? if ( $meta['wpem_wage'][0] == "Hourly DOQ" ) {
+					echo "selected";
+				} ?>>Hourly DOQ
+				</option>
+				<option value="Negotiable" <? if ( $meta['wpem_wage'][0] == "Negotiable" ) {
+					echo "selected";
+				} ?>>Negotiable
+				</option>
+				<option value="Salaried" <? if ( $meta['wpem_wage'][0] == "Salaried" ) {
+					echo "selected";
+				} ?>>Salaried
+				</option>
+			</select>
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_hours">Hours:</label>
+			<select id="wpem_hours" name="wpemmeta[wpem_hours]">
+				<option value=""></option>
+				<option value="Full-Time" <? if ( $meta['wpem_hours'][0] == "Full-Time" ) {
+					echo "selected";
+				} ?>>Full-Time
+				</option>
+				<option value="Full-Time (First Shift)" <? if ( $meta['wpem_hours'][0] == "Full-Time (First Shift)" ) {
+					echo "selected";
+				} ?>>Full-Time (First Shift)
+				</option>
+				<option value="Full-Time (Second Shift)" <? if ( $meta['wpem_hours'][0] == "Full-Time (Second Shift)" ) {
+					echo "selected";
+				} ?>>Full-Time (Second Shift)
+				</option>
+				<option value="Full-Time 12 Hr Shifts" <? if ( $meta['wpem_hours'][0] == "Full-Time 12 Hr Shifts" ) {
+					echo "selected";
+				} ?>>Full-Time 12 Hr Shifts
+				</option>
+				<option value="Part-Time" <? if ( $meta['wpem_hours'][0] == "Part-Time" ) {
+					echo "selected";
+				} ?>>Part-Time
+				</option>
+				<option value="Part-Time (First Shift)" <? if ( $meta['wpem_hours'][0] == "Part-Time (First Shift)" ) {
+					echo "selected";
+				} ?>>Part-Time (First Shift)
+				</option>
+				<option value="Part-Time (Second Shift)" <? if ( $meta['wpem_hours'][0] == "Part-Time (Second Shift)" ) {
+					echo "selected";
+				} ?>>Part-Time (Second Shift)
+				</option>
+			</select>
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_contact">Contact:</label>
+			<input type="text" style="width: 70%;" id="wpem_contact" name="wpemmeta[wpem_contact]" value="<?php echo $meta['wpem_contact'][0]; ?>">
+		</div>
+
+		<h4>Job Application Details</h4>
+
+		<div class="wpem-metabox-item">
+			<label for="wpem_resume">Resume Attachment:</label>
+			<select id="wpem_resume" name="wpemmeta[wpem_resume]">
+				<option value="Yes" <? if ( $meta['wpem_resume'][0] == "Yes" ) {
+					echo "selected";
+				} ?>>Yes
+				</option>
+				<option value="No" <? if ( $meta['wpem_resume'][0] == "No" ) {
+					echo "selected";
+				} ?>>No
+				</option>
+			</select>
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_custom">Custom Field Name (optional):</label>
+			<input type="text" style="width: 70%;" id="wpem_custom" name="wpemmeta[wpem_custom]" value="<?php echo $meta['wpem_custom'][0]; ?>">
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_custom2">Custom Field Type (optional):</label>
+			<select id="wpem_custom2" name="wpemmeta[wpem_custom2]">
+				<option value=""></option>
+				<option value="text" <? if ( $meta['wpem_custom2'][0] == "text" ) {
+					echo "selected";
+				} ?>>Text
+				</option>
+				<option value="textarea" <? if ( $meta['wpem_custom2'][0] == "textarea" ) {
+					echo "selected";
+				} ?>>Textarea
+				</option>
+			</select>
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_edu">Display Education History:</label>
+			<select id="wpem_edu" name="wpemmeta[wpem_edu]">
+				<option value="Yes" <? if ( $meta['wpem_edu'][0] == "Yes" ) {
+					echo "selected";
+				} ?>>Yes
+				</option>
+				<option value="No" <? if ( $meta['wpem_edu'][0] == "No" ) {
+					echo "selected";
+				} ?>>No
+				</option>
+			</select>
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_mil">Display Military Service:</label>
+			<select id="wpem_mil" name="wpemmeta[wpem_mil]">
+				<option value="Yes" <? if ( $meta['wpem_mil'][0] == "Yes" ) {
+					echo "selected";
+				} ?>>Yes
+				</option>
+				<option value="No" <? if ( $meta['wpem_mil'][0] == "No" ) {
+					echo "selected";
+				} ?>>No
+				</option>
+			</select>
+		</div>
+		<div class="wpem-metabox-item">
+			<label for="wpem_pem">Display Previous Employment:</label>
+			<select id="wpem_pem" name="wpemmeta[wpem_pem]">
+				<option value="Yes" <? if ( $meta['wpem_pem'][0] == "Yes" ) {
+					echo "selected";
+				} ?>>Yes
+				</option>
+				<option value="No" <? if ( $meta['wpem_pem'][0] == "No" ) {
+					echo "selected";
+				} ?>>No
+				</option>
+			</select>
+		</div>
+		<br>
+		<input type="submit" class="button" name="wpem_meta_submit" value="Save Job Opening Details">
+	</div>
+<?php
+}
+
+
+/* Save Meta Data */
+function wpem_save_wpem_meta( $post_id, $post )
+{
+	// verify this came from the our screen and with proper authorization,
+	// because save_post can be triggered at other times
+	if ( ! wp_verify_nonce( $_POST['wpem_noncename'], plugin_basename( __FILE__ ) ) ) {
+		return $post->ID;
 	}
-	
-	
-	/* Save Meta Data */
-	function wpem_save_wpem_meta($post_id, $post) {
-		// verify this came from the our screen and with proper authorization,
-		// because save_post can be triggered at other times
-		if ( !wp_verify_nonce( $_POST['wpem_noncename'], plugin_basename(__FILE__) )) {
-			return $post->ID;
+	// Is the user allowed to edit the post or page?
+	if ( ! current_user_can( 'edit_post', $post->ID ) )
+		return $post->ID;
+	$wpem_meta = $_POST['wpemmeta'];
+
+	foreach ( $wpem_meta as $key => $value ) {
+		if ( $post->post_type == 'revision' ) return;
+		if ( get_post_meta( $post->ID, $key, false ) ) {
+			update_post_meta( $post->ID, $key, $value );
+		} else {
+			add_post_meta( $post->ID, $key, $value );
 		}
-		// Is the user allowed to edit the post or page?
-		if ( !current_user_can( 'edit_post', $post->ID ))
-			return $post->ID;
-		$wpem_meta = $_POST['wpemmeta'];
-		
-		foreach ($wpem_meta as $key => $value) {
-			if( $post->post_type == 'revision' ) return;
-			if(get_post_meta($post->ID, $key, FALSE)) {
-				update_post_meta($post->ID, $key, $value);
-			} else {
-				add_post_meta($post->ID, $key, $value);
-			}
-			if(!$value) delete_post_meta($post->ID, $key);
-		}
+		if ( ! $value ) delete_post_meta( $post->ID, $key );
 	}
-	add_action('save_post', 'wpem_save_wpem_meta', 1, 2);	
-	
-	// Display Functions and Short Codes
-	// Job Listings Page
-	function wpem_func($atts) {
-	 	echo '<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>';
-	 	wp_register_style( 'wpem_css', plugins_url('css/wpem.css', __FILE__) );
-	 	wp_enqueue_style('wpem_css');
-		$url = home_url();
-	  $options = get_option('wpem_options');
-		$companies = explode(",", $options['companies']);
-    
-    foreach($companies as $x) {
-    	$tag=str_replace(' ', '-', $x);
-    	$args=array('post_type' => 'openings', 'tag' => $tag, 'orderby' => 'title', 'order' => 'ASC');
-    	$my_query = new WP_Query( $args );
-    	$i = 0;
-    	
-    	if($my_query->have_posts()) {
-    		echo "<legend>$x</legend>";
-        while($i < $my_query->post_count) : 
-        	$post = $my_query->posts;
-        	$meta = get_post_meta($post[$i]->ID);
-        	
-        	echo '<table class="table table-striped table-bordered table-condensed">
+}
+
+add_action( 'save_post', 'wpem_save_wpem_meta', 1, 2 );
+
+// Display Functions and Short Codes
+// Job Listings Page
+function wpem_func( $atts )
+{
+	echo '<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>';
+	wp_register_style( 'wpem_css', plugins_url( 'css/wpem.css', __FILE__ ) );
+	wp_enqueue_style( 'wpem_css' );
+	$url       = home_url();
+	$options   = get_option( 'wpem_options' );
+	$companies = explode( ",", $options['companies'] );
+
+	foreach ( $companies as $x ) {
+		$tag      = str_replace( ' ', '-', $x );
+		$args     = array( 'post_type' => 'openings', 'tag' => $tag, 'orderby' => 'title', 'order' => 'ASC' );
+		$my_query = new WP_Query( $args );
+		$i        = 0;
+
+		if ( $my_query->have_posts() ) {
+			echo "<legend>$x</legend>";
+			while ( $i < $my_query->post_count ) :
+				$post = $my_query->posts;
+				$meta = get_post_meta( $post[ $i ]->ID );
+
+				echo '<table class="table table-striped table-bordered table-condensed">
         				<tr>
-        					<td colspan="3"><h4>'.$post[$i]->post_title.'</h4></td>
+        					<td colspan="3"><h4>' . $post[ $i ]->post_title . '</h4></td>
         				</tr>
-        					<td width="33%"><strong>Wage: </strong>'.$meta['wpem_wage'][0].'</td>
-        					<td width="33%"><strong>Hours: </strong>'.$meta['wpem_hours'][0].'</td>
-        					<td width="33%"><strong>Details: </strong> <a href="#" class="more" id="'.$post[$i]->ID.'">Show</a></td>
+        					<td width="33%"><strong>Wage: </strong>' . $meta['wpem_wage'][0] . '</td>
+        					<td width="33%"><strong>Hours: </strong>' . $meta['wpem_hours'][0] . '</td>
+        					<td width="33%"><strong>Details: </strong> <a href="#" class="more" id="' . $post[ $i ]->ID . '">Show</a></td>
         				</tr>
-        				<tr class="'.$post[$i]->ID.' jdetails">
+        				<tr class="' . $post[ $i ]->ID . ' jdetails">
         					<td colspan="3">';
-        						echo wpautop($post[$i]->post_content);
-        						echo '<hr>
-        						<center><a class="btn btn-primary" href="'.$url.'/'.$options['applyp'].'/?pos='.$post[$i]->ID.'"><i class="icon-inbox"></i> Apply Now</a></center>
+				echo wpautop( $post[ $i ]->post_content );
+				echo '<hr>
+        						<center><a class="btn btn-primary" href="' . $url . '/' . $options['applyp'] . '/?pos=' . $post[ $i ]->ID . '"><i class="icon-inbox"></i> Apply Now</a></center>
         					</td>
         				</tr>
         				</table>';
-          
-          $post = '';
-          $i++;  
-        endwhile;
-      }
-    }
-    echo '<script>
+
+				$post = '';
+				$i ++;
+			endwhile;
+		}
+	}
+	echo '<script>
     				$(document).ready(function () {
     					$(".jdetails").hide();
     					$(".more").click(function () {
@@ -336,27 +375,29 @@
     					});
     				});
     			</script>';
-  }
-	add_shortcode('WPEM', 'wpem_func');
-	
-	// Application Page
-	function wpem_apply($atts) {
-		wp_register_style( 'wpem_css', plugins_url('css/wpem.css', __FILE__) );
-	 	wp_enqueue_style('wpem_css');
-  	$pid = $_GET['pos'];
-    $post = get_post($pid); 
-		$title = $post->post_title;
-		$meta = get_post_meta($pid);
-		
-		// Fixes the paths for Windows
-		$upload_dir = wp_upload_dir();
-		$workaround = str_replace("\\", "|", $upload_dir['basedir']);
-		// Query the automatic email reply content
-		$options = get_option('wpem_options');
-		$reply = $options['reply'];
-		$rname = $options['rname'];
-		
-		echo '<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+}
+
+add_shortcode( 'WPEM', 'wpem_func' );
+
+// Application Page
+function wpem_apply( $atts )
+{
+	wp_register_style( 'wpem_css', plugins_url( 'css/wpem.css', __FILE__ ) );
+	wp_enqueue_style( 'wpem_css' );
+	$pid   = $_GET['pos'];
+	$post  = get_post( $pid );
+	$title = $post->post_title;
+	$meta  = get_post_meta( $pid );
+
+	// Fixes the paths for Windows
+	$upload_dir = wp_upload_dir();
+	$workaround = str_replace( "\\", "|", $upload_dir['basedir'] );
+	// Query the automatic email reply content
+	$options = get_option( 'wpem_options' );
+	$reply   = $options['reply'];
+	$rname   = $options['rname'];
+
+	echo '<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 					<span id="apply">
 					<legend>General Information</legend>
 					<table class="table">
@@ -386,21 +427,21 @@
 								<textarea id="address" class="span12" rows="3" name="address" placeholder="Ex: 123 1st St, Willmar, MN 56201"></textarea>
 							</td>
 						</tr>';
-					
-					if(strlen($meta['wpem_custom'][0]) > 1) {
-						echo '<tr><td colspan="2"><label class="text-info" for="'.$meta['wpem_custom'][0].'">'.$meta['wpem_custom'][0].'</label>';
-						if($meta['wpem_custom2'][0] == 'text') {
-							echo '<input type="text" class="span12" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'">';
-						} else {
-							echo '<textarea class="span12" rows="5" id="'.$meta['wpem_custom'][0].'" name="'.$meta['wpem_custom'][0].'"></textarea>';
-						}
-						echo "</td></tr>";
-					}
-					
-					echo "</table>";
-					
-		echo '<legend>Disclaimer and Signature</legend>
-					<p><em>'.wpautop($options['disclaimer']).'</em></p>
+
+	if ( strlen( $meta['wpem_custom'][0] ) > 1 ) {
+		echo '<tr><td colspan="2"><label class="text-info" for="' . $meta['wpem_custom'][0] . '">' . $meta['wpem_custom'][0] . '</label>';
+		if ( $meta['wpem_custom2'][0] == 'text' ) {
+			echo '<input type="text" class="span12" id="' . $meta['wpem_custom'][0] . '" name="' . $meta['wpem_custom'][0] . '">';
+		} else {
+			echo '<textarea class="span12" rows="5" id="' . $meta['wpem_custom'][0] . '" name="' . $meta['wpem_custom'][0] . '"></textarea>';
+		}
+		echo "</td></tr>";
+	}
+
+	echo "</table>";
+
+	echo '<legend>Disclaimer and Signature</legend>
+					<p><em>' . wpautop( $options['disclaimer'] ) . '</em></p>
 					<table class="table">
 						<tr>
 							<td>
@@ -409,17 +450,17 @@
 							</td>
 						</tr>
 					</table>';
-					
-			if($meta['wpem_resume'][0] == 'Yes') {
-				echo '<legend>Resume & Cover Letter</legend>
+
+	if ( $meta['wpem_resume'][0] == 'Yes' ) {
+		echo '<legend>Resume & Cover Letter</legend>
 							<form id="resumeform">
 							<button class="btn btn-primary disabled" disabled="disabled" id="resume"><i class="icon-cloud-upload"></i> Attach Resume</button>
 							<input id="resumefile" name="resumefile" type="file" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" width="20">
-							<input type="hidden" name="updir" value="'.$upload_dir['basedir'].'">
+							<input type="hidden" name="updir" value="' . $upload_dir['basedir'] . '">
 							</form>
 							<strong>If you include a resume, completion of the fields below is completely optional.</strong><br>';
-				// Code for the resume uploader
-				echo '<script type="text/javascript">
+		// Code for the resume uploader
+		echo '<script type="text/javascript">
 			   	 		$(document).ready(function () {
 			   	 			$("#resumefile").change(function () {
 			   	 				if($(this).val() !== "") {
@@ -434,7 +475,7 @@
 			            var iframe = $(\'<iframe name="postiframe" id="postiframe" style="display: none" />\');
 			            $("body").append(iframe);
 			            var form = $("#resumeform");
-			            form.attr("action", "'.PLUGIN_PATH . 'resume.php");
+			            form.attr("action", "' . PLUGIN_PATH . 'resume.php");
 			            form.attr("method", "post");
 			            form.attr("enctype", "multipart/form-data");
 			            form.attr("encoding", "multipart/form-data");
@@ -454,9 +495,9 @@
 								});
 							});
 							</script>';
-			}			
-					
-		echo '<br><legend>Further Information</legend>
+	}
+
+	echo '<br><legend>Further Information</legend>
 					<table class="table">
 						<tr>
 							<td>
@@ -541,9 +582,9 @@
 							</td>
 						</tr>
 					</table>';
-					
-					if(isset($meta['wpem_edu'][0]) && $meta['wpem_edu'][0] == 'Yes') {
-					echo '
+
+	if ( isset( $meta['wpem_edu'][0] ) && $meta['wpem_edu'][0] == 'Yes' ) {
+		echo '
 					<legend>Education History</legend>
 					<table class="table">
 						<tr>
@@ -664,10 +705,10 @@
 							</td>
 						</td>
 					</table>';
-					}
-					
-					if(isset($meta['wpem_mil'][0]) && $meta['wpem_mil'][0] == 'Yes') {
-					echo '
+	}
+
+	if ( isset( $meta['wpem_mil'][0] ) && $meta['wpem_mil'][0] == 'Yes' ) {
+		echo '
 					<legend>Military Service</legend>
 					<table class="table">
 						<tr>
@@ -701,10 +742,10 @@
 							</td>
 						</tr>
 					</table>';
-					}
-					
-					if(isset($meta['wpem_pem'][0]) && $meta['wpem_pem'][0] == 'Yes') {
-					echo '
+	}
+
+	if ( isset( $meta['wpem_pem'][0] ) && $meta['wpem_pem'][0] == 'Yes' ) {
+		echo '
 					<legend>Previous Employment</legend>
 					<em>List Present or Most Recent Employer First</em>
 					
@@ -981,15 +1022,15 @@
 							</td>
 						</tr>
 					</table>';
-					}
-		if(strlen($reply) > 0) {
-			echo '<input type="hidden" id="reply" name="reply" value="'.$reply.'">';
-		}
-		echo "<hr>";
-		echo '<button type="submit" class="btn btn-success" name="submit" id="submit"><i class="icon-ok"></i> Submit Application</button>
+	}
+	if ( strlen( $reply ) > 0 ) {
+		echo '<input type="hidden" id="reply" name="reply" value="' . $reply . '">';
+	}
+	echo "<hr>";
+	echo '<button type="submit" class="btn btn-success" name="submit" id="submit"><i class="icon-ok"></i> Submit Application</button>
 					<input type="hidden" id="resattach" name="resattach">
 					</span>';
-		echo '<script type="text/javascript">
+	echo '<script type="text/javascript">
 		   	 		$(document).ready(function () {
 		   	 			$("#submit").click(function () {
 		   	 				$(".help-inline").unwrap();
@@ -1026,26 +1067,26 @@
 		   	 				var address = $("#address").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						experience = $("#experience").val().replace(/\r\n|\r|\n/g,"<br>");
 		   	 						skills = $("#skills").val().replace(/\r\n|\r|\n/g,"<br>");';
-		   	 						if(strlen($reply) > 0) {
-		   	 			echo 'reply = $("#reply").val().replace(/\r\n|\r|\n/g,"<br>");';
-		   	 						}
-		   	 			echo '			
+	if ( strlen( $reply ) > 0 ) {
+		echo 'reply = $("#reply").val().replace(/\r\n|\r|\n/g,"<br>");';
+	}
+	echo '
 			   	 			$.ajax({
-				 	 				url: "'.PLUGIN_PATH . 'resume.php",
-				 	 				data: {"pdir" : "'.$workaround.'",
-				 	 							 "jobtitle" : "'.$title.'",
-				 	 							 "contact" : "'.$meta['wpem_contact'][0].'",
+				 	 				url: "' . PLUGIN_PATH . 'resume.php",
+				 	 				data: {"pdir" : "' . $workaround . '",
+				 	 							 "jobtitle" : "' . $title . '",
+				 	 							 "contact" : "' . $meta['wpem_contact'][0] . '",
 				 	 							 "resattach" : $("#resattach").val(),';
-				 	 							 if(strlen($meta['wpem_custom'][0]) > 1) {
-				 	 				  echo '"custom1" : "'.$meta['wpem_custom'][0].'",
-				 	 							  "custom2" : $("[id=\''.$meta['wpem_custom'][0].'\']").val(),';
-				 	 							 }
-				 	 							 if(strlen($reply) > 1) {
-				 	 				  echo '"reply" : reply,
-				 	 				  			"rname" : "'.$rname.'",';
-				 	 							 }
-				 	 					if(isset($meta['wpem_edu'][0]) && $meta['wpem_edu'][0] == 'Yes') {
-				 	 					echo '"hs" : $("#hs").val(),
+	if ( strlen( $meta['wpem_custom'][0] ) > 1 ) {
+		echo '"custom1" : "' . $meta['wpem_custom'][0] . '",
+				 	 							  "custom2" : $("[id=\'' . $meta['wpem_custom'][0] . '\']").val(),';
+	}
+	if ( strlen( $reply ) > 1 ) {
+		echo '"reply" : reply,
+				 	 				  			"rname" : "' . $rname . '",';
+	}
+	if ( isset( $meta['wpem_edu'][0] ) && $meta['wpem_edu'][0] == 'Yes' ) {
+		echo '"hs" : $("#hs").val(),
 				 	 								"hs2" : $("#hs2").val(),
 				 	 								"hs3" : $("#hs3").val(),
 				 	 								"hs4" : $("#hs4").val(),
@@ -1065,18 +1106,18 @@
 				 	 								"objectives" : $("#objectives").val(),
 				 	 								"etc" : $("#etc").val(),
 				 	 								"referral" : $("#referral").val(),';
-				 	 					}
-				 	 					if(isset($meta['wpem_mil'][0]) && $meta['wpem_mil'][0] == 'Yes') {
-				 	 					echo '"branch" : $("#branch").val(),
+	}
+	if ( isset( $meta['wpem_mil'][0] ) && $meta['wpem_mil'][0] == 'Yes' ) {
+		echo '"branch" : $("#branch").val(),
 				 	 								"mi1" : $("#mi1").val(),
 				 	 								"mi2" : $("#mi2").val(),
 				 	 								"mi3" : $("#mi3").val(),
 				 	 								"mi4" : $("#mi4").val(),
 				 	 								"mi5" : $("#mi5").val(),
 				 	 							 ';
-				 	 					}
-				 	 					if(isset($meta['wpem_pem'][0]) && $meta['wpem_pem'][0] == 'Yes') {
-				 	 					echo '"peco1" : $("#peco1").val(),
+	}
+	if ( isset( $meta['wpem_pem'][0] ) && $meta['wpem_pem'][0] == 'Yes' ) {
+		echo '"peco1" : $("#peco1").val(),
 				 	 								"pead1" : $("#pead1").val(),
 				 	 								"pesu1" : $("#pesu1").val(),
 				 	 								"peph1" : $("#peph1").val(),
@@ -1124,8 +1165,8 @@
 				 	 								"peto4" : $("#peto4").val(),
 				 	 								"perl4" : $("#perl4").val(),
 				 	 								"peref4" : $("#peref4").val(),';
-				 	 					}
-				 	 					echo '"first" : $("#first").val(),
+	}
+	echo '"first" : $("#first").val(),
 				 	 							 "last" : $("#last").val(),
 				 	 							 "email" : $("#email").val(),
 				 	 							 "phone" : $("#phone").val(),
@@ -1155,7 +1196,8 @@
 				 	 		});
 		   	 		});
 		   	 	</script>';
-  }
-	add_shortcode('EMAPPLY', 'wpem_apply');
-	
+}
+
+add_shortcode( 'EMAPPLY', 'wpem_apply' );
+
 ?>

@@ -1,12 +1,10 @@
-wpjobs
+WordPress Job Openings & Application Management
 ======
-Wordpress plugin for managing job openings & applications.
-
-[Check out the plugin at Wordpress.org](http://wordpress.org/plugins/wp-employment/)
+A WordPress plugin allowing administrators and editors to post available job openings, accept resumes & applications, and send batch emails to applicants.
 
 Description
 -----------
-Integrates a simple system to list job openings, display them on a sleek and organized page, and accept applications via pre-formatted email messages.
+Integrates a simple system to list job openings, display them on a sleek and organized page, and accept applications & resumes via pre-formatted email messages.
 
 Uses the short code `[WPEM]` to render the job listings with the proper tags defined in the settings panel.
 Uses the short code `[EMAPPLY]` to render the job application form for the selected job opening.
@@ -15,8 +13,7 @@ Note: When creating job listings, be sure to fill out the job meta data (contact
 
 Dependencies
 ------------
-1. Active [Wordpress](http://wordpress.org/) installation (tested on 3.5+).
-2. Uses [PHPMailer](https://github.com/PHPMailer/PHPMailer) to format and mail the received applications.
+1. Active [Wordpress](http://wordpress.org/) installation (tested up to 4.1).
 
 Installation
 ------------
