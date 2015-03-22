@@ -70,6 +70,10 @@ class WP_Employment_Admin {
 		}
 	}
 
+	/**
+	 * Register the different settings available
+	 * to customize the plugin.
+	 */
 	public function register_settings()
 	{
 		// Add settings section
@@ -83,48 +87,28 @@ class WP_Employment_Admin {
 		// Add Settings Fields
 		add_settings_field( $this->token . '_companies', __( 'Company Names', $this->token ), array(
 			$this,
-			'companies'
-		), $this->token, 'customize', array(
-			'id'          => 'companies',
-			'type'        => 'text',
-			'placeholder' => 'Company 1,Company 2'
-		) );
+			'companies_field'
+		), $this->token, 'customize' );
 
 		add_settings_field( $this->token . '_applyp', __( 'Application Page', $this->token ), array(
 			$this,
-			'applyp'
-		), $this->token, 'customize', array(
-			'id'          => $this->token . '_applyp',
-			'type'        => 'text',
-			'placeholder' => 'Title of the page containing the [EMAPPLY] shortcode'
-		) );
+			'application_page_field'
+		), $this->token, 'customize' );
 
 		add_settings_field( $this->token . '_rname', __( 'Auto Reply From (Name)', $this->token ), array(
 			$this,
-			'rname'
-		), $this->token, 'customize', array(
-			'id'          => $this->token . '_rname',
-			'type'        => 'text',
-			'placeholder' => 'Human Resources'
+			'auto_reply_name_field'
 		) );
 
 		add_settings_field( $this->token . '_reply', __( 'Auto Reply Content', $this->token ), array(
 			$this,
-			'reply'
-		), $this->token, 'customize', array(
-			'id'          => $this->token . '_reply',
-			'type'        => 'textarea',
-			'placeholder' => 'Email that will be sent to user when application is submitted'
-		) );
+			'auto_reply_content_field'
+		), $this->token, 'customize' );
 
 		add_settings_field( $this->token . '_disclaimer', __( 'Application Disclaimer', $this->token ), array(
 			$this,
-			'disclaimer'
-		), $this->token, 'customize', array(
-			'id'          => $this->token . '_disclaimer',
-			'type'        => 'textarea',
-			'placeholder' => 'Optional disclaimer to be displayed on the application'
-		) );
+			'disclaimer_field'
+		), $this->token, 'customize' );
 
 		// Register settings fields
 		register_setting( $this->token, $this->token . '_companies' );
@@ -135,5 +119,115 @@ class WP_Employment_Admin {
 
 		// Allow plugins to add more settings fields
 		do_action( $this->token . '_settings_fields' );
+	}
+
+	/**
+	 * Define the main description string
+	 * for the Settings page.
+	 */
+	public function main_settings()
+	{
+		echo '<p>' . __( 'Adjust settings for the employment plugin below. For the companies field, list the names of the different tags that you will give your posts, separated by commas. (Ex. Company1,Company2)', $this->token ) . '</p>';
+	}
+
+	/**
+	 * Create the companies field for the Settings page.
+	 */
+	public function companies_field()
+	{
+		$option = get_option( $this->token . '_companies' );
+
+		$data = 'Company 1,Company 2';
+		if ( $option && strlen( $option ) > 0 && $option != '' )
+			$data = $option;
+
+		echo '<input id="companies" type="text" name="' . $this->token . '_companies" value="' . $data . '"/>
+					<label for="companies"><span class="description">' . sprintf( __( 'Define the companies that job openings will be posted for.', $this->token ) ) . '</span></label>';
+	}
+
+	/**
+	 * Create the application page field for the Settings page.
+	 */
+	public function application_page_field()
+	{
+		$option = get_option( $this->token . '_applyp' );
+
+		$data = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' )
+			$data = $option;
+
+		echo '<input id="applyp" type="text" name="' . $this->token . '_applyp" value="' . $data . '"/>
+					<label for="applyp"><span class="description">' . sprintf( __( 'Title of the page containing the [EMAPPLY] shortcode.', $this->token ) ) . '</span></label>';
+	}
+
+	/**
+	 * Create the auto reply name field for the Settings page.
+	 */
+	public function auto_reply_name_field()
+	{
+		$option = get_option( $this->token . '_rname' );
+
+		$data = 'Human Resources';
+		if ( $option && strlen( $option ) > 0 && $option != '' )
+			$data = $option;
+
+		echo '<input id="rname" type="text" name="' . $this->token . '_rname" value="' . $data . '"/>
+					<label for="rname"><span class="description">' . sprintf( __( 'The name that emails from the plugin will be sent from.', $this->token ) ) . '</span></label>';
+	}
+
+	/**
+	 * Create the auto reply content field for the Settings page.
+	 */
+	public function auto_reply_content_field()
+	{
+		$option = get_option( $this->token . '_reply' );
+
+		$data = get_option( 'admin_email' );
+		if ( $option && strlen( $option ) > 0 && $option != '' )
+			$data = $option;
+
+		echo '<input id="reply" type="text" name="' . $this->token . '_reply" value="' . $data . '"/>
+					<label for="reply"><span class="description">' . sprintf( __( 'Email that will be sent to user when application is submitted.', $this->token ) ) . '</span></label>';
+	}
+
+	/**
+	 * Create the disclaimer field for the Settings page.
+	 */
+	public function disclaimer_field()
+	{
+		$option = get_option( $this->token . '_disclaimer' );
+
+		$data = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' )
+			$data = $option;
+
+		echo '<input id="disclaimer" type="text" name="' . $this->token . '_disclaimer" value="' . $data . '"/>
+					<label for="disclaimer"><span class="description">' . sprintf( __( 'Optional disclaimer to be displayed on the application..', $this->token ) ) . '</span></label>';
+	}
+
+	/**
+	 * Create the actual HTML structure
+	 * for the Settings page for the plugin
+	 *
+	 */
+	public function settings_page()
+	{
+		if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] == true ) {
+			echo '<div class="updated"><p>Successfully updated.</p></div>';
+		}
+
+		echo '<div class="wrap" id="' . $this->token . '_settings">
+						<h2>' . __( 'WordPress Job Openings Settings', $this->token ) . '</h2>
+						<form method="post" action="options.php" enctype="multipart/form-data">
+							<div class="clear"></div>';
+
+		settings_fields( $this->token );
+		do_settings_sections( $this->token );
+
+		echo '<p class="submit">
+								<input name="Submit" type="submit" class="button-primary" value="' . esc_attr( __( 'Save Settings', $this->token ) ) . '" />
+							</p>
+						</form>
+				  </div>';
 	}
 }
