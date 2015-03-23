@@ -1,9 +1,14 @@
-WordPress Job Openings & Application Management
-======
+=== WordPress Job Openings & Application Management ===
+Contributors: Aaron Huisinga
+Tags: employment, jobs, applications, human resources
+Requires at least: 3.5
+Tested up to: 4.1
+Stable tag: 0.5.5
+
 A WordPress plugin allowing administrators and editors to post available job openings, accept resumes & applications, and send batch emails to applicants.
 
-Description
------------
+== Description ==
+
 Integrates a simple system to list job openings, display them on a sleek and organized page, and accept applications & resumes via pre-formatted email messages.
 
 Uses the short code `[WPEM]` to render the job listings with the proper tags defined in the settings panel.
@@ -11,8 +16,8 @@ Uses the short code `[EMAPPLY]` to render the job application form for the selec
 
 Note: When creating job listings, be sure to fill out the job meta data (contact email, wage, resume, etc)! Without some of them, you may experience errors.
 
-Installation
-------------
+== Installation ==
+
 1. Upload the `wp-openings.zip` file to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Adjust settings under `Settings -> Job Openings`
@@ -21,11 +26,3 @@ Installation
 	2. Also be sure to check the Meta information under the post body. These are settings unique to the job listing post type.
 5. Create a new WP page, and use the short code `[WPEM]` in post content to pull in active listings and format them automatically.
 6. Create another new WP page, and use the short code `[EMAPPLY]` to let viewers apply for positions that are listed.
-
-Contributing
-------------
-
-- [Fork](https://help.github.com/articles/fork-a-repo) the [repository on Github](https://github.com/aaronhuisinga/wordpress-employment)
-- Commit and push until you are happy with your contribution
-- [Make a pull request](https://help.github.com/articles/using-pull-requests)
-- Thanks!
