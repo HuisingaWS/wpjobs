@@ -66,6 +66,11 @@ class WP_Employment {
 			'menu_name'          => __( 'Job Openings', $this->token )
 		);
 
+		$slug        = __( 'openings', $this->token );
+		$custom_slug = get_option( $this->token . '_slug' );
+		if ( $custom_slug && strlen( $custom_slug ) > 0 && $custom_slug != '' )
+			$slug = $custom_slug;
+
 		$args = array(
 			'labels'             => $labels,
 			'public'             => true,
@@ -73,7 +78,7 @@ class WP_Employment {
 			'show_ui'            => true,
 			'show_in_menu'       => true,
 			'query_var'          => true,
-			'rewrite'            => true,
+			'rewrite'            => array( 'slug' => $slug ),
 			'capability_type'    => 'post',
 			'has_archive'        => true,
 			'hierarchical'       => false,

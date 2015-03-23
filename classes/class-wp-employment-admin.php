@@ -93,6 +93,11 @@ class WP_Employment_Admin {
 			'companies_field'
 		), $this->token, 'customize' );
 
+		add_settings_field( $this->token . '_slug', __( 'URL slug for Job Openings', $this->token ), array(
+			$this,
+			'slug_field'
+		), $this->token, 'customize' );
+
 		add_settings_field( $this->token . '_rname', __( 'Auto Reply From (Name)', $this->token ), array(
 			$this,
 			'auto_reply_name_field'
@@ -110,6 +115,7 @@ class WP_Employment_Admin {
 
 		// Register settings fields
 		register_setting( $this->token, $this->token . '_companies' );
+		register_setting( $this->token, $this->token . '_slug', array( $this, 'validate_slug' ) );
 		register_setting( $this->token, $this->token . '_rname' );
 		register_setting( $this->token, $this->token . '_reply' );
 		register_setting( $this->token, $this->token . '_disclaimer' );
@@ -147,6 +153,41 @@ class WP_Employment_Admin {
 		<input name="<?php echo $this->token . '_companies'; ?>" type="text" id="companies" style="width:80%" value="<?php echo $data; ?>" class="regular-text">
 		<p class="description"><?php echo sprintf( __( 'Define the companies that job openings will be posted for.', $this->token ) ); ?></p>
 	<?php
+	}
+
+	/**
+	 * Create the slug field for the Settings page.
+	 * The slug field allows users to choose which
+	 * subdirectory their job openings are nested in.
+	 */
+	public function slug_field()
+	{
+		$option = get_option( $this->token . '_slug' );
+
+		$data = 'openings';
+		if ( $option && strlen( $option ) > 0 && $option != '' )
+			$data = $option;
+
+		?>
+		<input name="<?php echo $this->token . '_slug'; ?>" type="text" id="slug" style="width:80%" value="<?php echo $data; ?>" class="regular-text">
+		<p class="description"><?php echo sprintf( __( 'Provide a custom URL slug for your job openings to be listed in.', $this->token ) ); ?></p>
+	<?php
+	}
+
+	/**
+	 * Validates that a slug has been defined,
+	 * and formats it properly as a URL
+	 *
+	 * @param string $slug
+	 *
+	 * @return string
+	 */
+	public function validate_slug( $slug )
+	{
+		if ( $slug && strlen( $slug ) > 0 && $slug != '' )
+			$slug = urlencode( strtolower( str_replace( ' ', '-', $slug ) ) );
+
+		return $slug;
 	}
 
 	/**
