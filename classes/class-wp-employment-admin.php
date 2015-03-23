@@ -39,7 +39,10 @@ class WP_Employment_Admin {
 	 */
 	public function add_menu_item()
 	{
-		add_options_page( 'WP Job Openings Configuration', 'Job Openings', 'publish_posts', $this->token . '_config', 'settings_page' );
+		add_options_page( 'WP Job Openings Configuration', 'Job Openings', 'publish_posts', $this->token . '_config', array(
+			$this,
+			'settings_page'
+		) );
 	}
 
 	/**
@@ -50,7 +53,7 @@ class WP_Employment_Admin {
 		global $current_user;
 		$user_id = $current_user->ID;
 
-		if ( get_user_meta( $user_id, $this->token . '_ignore_notice' ) ) {
+		if ( ! get_user_meta( $user_id, $this->token . '_ignore_notice' ) ) {
 			echo '<div class="updated"><p>';
 			printf( __( 'The WP Job Openings plugin will not function until pages with the [WPEM] and [EMAPPLY] shortcodes are created. <span style="float: right;"><a href="%1$s">Hide Notice</a></span>' ), '?' . $this->token . '_ignore_notice=1' );
 			echo "</p></div>";
@@ -65,8 +68,8 @@ class WP_Employment_Admin {
 		global $current_user;
 		$user_id = $current_user->ID;
 
-		if ( isset( $_GET[ $this->token . 'ignore_notice' ] ) && $_GET[ $this->token . 'ignore_notice' ] == '1' ) {
-			add_user_meta( $user_id, $this->token . 'ignore_notice', 'true', true );
+		if ( isset( $_GET[ $this->token . '_ignore_notice' ] ) && $_GET[ $this->token . '_ignore_notice' ] == '1' ) {
+			add_user_meta( $user_id, $this->token . '_ignore_notice', 'true', true );
 		}
 	}
 
@@ -90,15 +93,10 @@ class WP_Employment_Admin {
 			'companies_field'
 		), $this->token, 'customize' );
 
-		add_settings_field( $this->token . '_applyp', __( 'Application Page', $this->token ), array(
-			$this,
-			'application_page_field'
-		), $this->token, 'customize' );
-
 		add_settings_field( $this->token . '_rname', __( 'Auto Reply From (Name)', $this->token ), array(
 			$this,
 			'auto_reply_name_field'
-		) );
+		), $this->token, 'customize' );
 
 		add_settings_field( $this->token . '_reply', __( 'Auto Reply Content', $this->token ), array(
 			$this,
@@ -112,7 +110,6 @@ class WP_Employment_Admin {
 
 		// Register settings fields
 		register_setting( $this->token, $this->token . '_companies' );
-		register_setting( $this->token, $this->token . '_applyp' );
 		register_setting( $this->token, $this->token . '_rname' );
 		register_setting( $this->token, $this->token . '_reply' );
 		register_setting( $this->token, $this->token . '_disclaimer' );
@@ -127,7 +124,12 @@ class WP_Employment_Admin {
 	 */
 	public function main_settings()
 	{
-		echo '<p>' . __( 'Adjust settings for the employment plugin below. For the companies field, list the names of the different tags that you will give your posts, separated by commas. (Ex. Company1,Company2)', $this->token ) . '</p>';
+		?>
+		<p><?php echo __( 'Adjust settings for the employment plugin below.', $this->token ); ?>
+			<br>
+			<em><?php echo __( 'For the companies field, list the names of the different tags that you will give your posts, separated by commas. (Ex. Company1,Company2)', $this->token ) ?></em>
+		</p>
+	<?php
 	}
 
 	/**
@@ -141,23 +143,10 @@ class WP_Employment_Admin {
 		if ( $option && strlen( $option ) > 0 && $option != '' )
 			$data = $option;
 
-		echo '<input id="companies" type="text" name="' . $this->token . '_companies" value="' . $data . '"/>
-					<label for="companies"><span class="description">' . sprintf( __( 'Define the companies that job openings will be posted for.', $this->token ) ) . '</span></label>';
-	}
-
-	/**
-	 * Create the application page field for the Settings page.
-	 */
-	public function application_page_field()
-	{
-		$option = get_option( $this->token . '_applyp' );
-
-		$data = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' )
-			$data = $option;
-
-		echo '<input id="applyp" type="text" name="' . $this->token . '_applyp" value="' . $data . '"/>
-					<label for="applyp"><span class="description">' . sprintf( __( 'Title of the page containing the [EMAPPLY] shortcode.', $this->token ) ) . '</span></label>';
+		?>
+		<input name="<?php echo $this->token . '_companies'; ?>" type="text" id="companies" style="width:80%" value="<?php echo $data; ?>" class="regular-text">
+		<p class="description"><?php echo sprintf( __( 'Define the companies that job openings will be posted for.', $this->token ) ); ?></p>
+	<?php
 	}
 
 	/**
@@ -171,8 +160,10 @@ class WP_Employment_Admin {
 		if ( $option && strlen( $option ) > 0 && $option != '' )
 			$data = $option;
 
-		echo '<input id="rname" type="text" name="' . $this->token . '_rname" value="' . $data . '"/>
-					<label for="rname"><span class="description">' . sprintf( __( 'The name that emails from the plugin will be sent from.', $this->token ) ) . '</span></label>';
+		?>
+		<input name="<?php echo $this->token . '_rname'; ?>" type="text" id="rname" style="width:80%" value="<?php echo $data; ?>" class="regular-text">
+		<p class="description"><?php echo sprintf( __( 'The name that emails from the plugin will be sent from.', $this->token ) ); ?></p>
+	<?php
 	}
 
 	/**
@@ -182,12 +173,14 @@ class WP_Employment_Admin {
 	{
 		$option = get_option( $this->token . '_reply' );
 
-		$data = get_option( 'admin_email' );
+		$data = "Hello,\nThank you for your application and interest in our position. You are receiving this email to acknowledge our receipt of your employment inquiry. Please be assured that we will review any and all attachments to your submission, and that we will contact you if we experience any problems viewing a document.\n\nWe truly appreciate your time and interest in gaining employment with one of our affiliated companies, but we are limited in our ability to respond to every inquiry. We will contact you if we decide your qualifications match our needs. Please feel free to continue to apply for any position for which you meet the qualifications.\n\nThank you again for your application and have a great day.";
 		if ( $option && strlen( $option ) > 0 && $option != '' )
 			$data = $option;
 
-		echo '<input id="reply" type="text" name="' . $this->token . '_reply" value="' . $data . '"/>
-					<label for="reply"><span class="description">' . sprintf( __( 'Email that will be sent to user when application is submitted.', $this->token ) ) . '</span></label>';
+		?>
+		<textarea name="<?php echo $this->token . '_reply'; ?>" id="reply" style="width:80%" rows="10"><?php echo $data; ?></textarea>
+		<p class="description"><?php echo sprintf( __( 'Email that will be sent to user when application is submitted.', $this->token ) ); ?></p>
+	<?php
 	}
 
 	/**
@@ -197,12 +190,14 @@ class WP_Employment_Admin {
 	{
 		$option = get_option( $this->token . '_disclaimer' );
 
-		$data = '';
+		$data = "I certify the information contained in this application is true and complete to the best of my knowledge. I understand that any falsification or omission of information will be sufficient grounds for denial of employment, or if hired, dismissal.\n\nI affirm that I have a genuine intent and no other purposes in applying for a job with this employer.";
 		if ( $option && strlen( $option ) > 0 && $option != '' )
 			$data = $option;
 
-		echo '<input id="disclaimer" type="text" name="' . $this->token . '_disclaimer" value="' . $data . '"/>
-					<label for="disclaimer"><span class="description">' . sprintf( __( 'Optional disclaimer to be displayed on the application..', $this->token ) ) . '</span></label>';
+		?>
+		<textarea name="<?php echo $this->token . '_disclaimer'; ?>" id="reply" style="width:80%" rows="10"><?php echo $data; ?></textarea>
+		<p class="description"><?php echo sprintf( __( 'Optional disclaimer to be displayed on the application.', $this->token ) ); ?></p>
+	<?php
 	}
 
 	/**
@@ -212,10 +207,6 @@ class WP_Employment_Admin {
 	 */
 	public function settings_page()
 	{
-		if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] == true ) {
-			echo '<div class="updated"><p>Successfully updated.</p></div>';
-		}
-
 		echo '<div class="wrap" id="' . $this->token . '_settings">
 						<h2>' . __( 'WordPress Job Openings Settings', $this->token ) . '</h2>
 						<form method="post" action="options.php" enctype="multipart/form-data">
