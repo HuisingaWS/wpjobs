@@ -223,9 +223,23 @@ class WP_Employment {
 	 */
 	public function get_custom_fields_settings()
 	{
-		$fields = [ ];
+		$fields    = array();
+		$options   = array();
+		$companies = explode( ',', get_option( $this->token . '_companies' ) );
+		foreach ( $companies as $company ) {
+			$options[ $company ] = $company;
+		}
 
-		$fields['wage'] = [
+		$fields['company'] = array(
+			'name'        => __( 'Company', $this->token ),
+			'description' => __( 'The company this job is for.', $this->token ),
+			'placeholder' => '',
+			'type'        => 'select',
+			'options'     => $options,
+			'section'     => 'info'
+		);
+
+		$fields['wage'] = array(
 			'name'        => __( 'Wage', $this->token ),
 			'description' => __( 'The wage to be paid for the job.', $this->token ),
 			'placeholder' => '',
@@ -237,9 +251,9 @@ class WP_Employment {
 				'Salaried'   => 'Salaried'
 			),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['hours'] = [
+		$fields['hours'] = array(
 			'name'        => __( 'Hours', $this->token ),
 			'description' => __( 'The hours required for the job.', $this->token ),
 			'placeholder' => '',
@@ -254,18 +268,18 @@ class WP_Employment {
 				'Part Time (Second Shift)' => 'Part Time (Second Shift)'
 			),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['contact'] = [
+		$fields['contact'] = array(
 			'name'        => __( 'Contact Email', $this->token ),
 			'description' => __( 'The contact email for the job.', $this->token ),
 			'placeholder' => 'example@example.com',
 			'type'        => 'email',
 			'default'     => get_option( 'admin_email' ),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['resume'] = [
+		$fields['resume'] = array(
 			'name'        => __( 'Resume Attachment', $this->token ),
 			'description' => __( 'Should users be allowed to submit resume files?', $this->token ),
 			'placeholder' => '',
@@ -275,18 +289,18 @@ class WP_Employment {
 				'No'  => 'No'
 			),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['custom_name'] = [
+		$fields['custom_name'] = array(
 			'name'        => __( 'Custom Field Name', $this->token ),
 			'description' => __( '(optional) Name for custom field on application form.', $this->token ),
-			'placeholder' => 'example@example.com',
+			'placeholder' => '',
 			'type'        => 'email',
 			'default'     => get_option( 'admin_email' ),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['custom_type'] = [
+		$fields['custom_type'] = array(
 			'name'        => __( 'Custom Field Type', $this->token ),
 			'description' => __( '(optional) Type of the custom field on application form.', $this->token ),
 			'placeholder' => '',
@@ -296,9 +310,9 @@ class WP_Employment {
 				'textarea' => 'Textarea'
 			),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['education'] = [
+		$fields['education'] = array(
 			'name'        => __( 'Display Education History', $this->token ),
 			'description' => __( 'Display fields related to education history on application form.', $this->token ),
 			'placeholder' => '',
@@ -308,9 +322,9 @@ class WP_Employment {
 				'No'  => 'No'
 			),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['military'] = [
+		$fields['military'] = array(
 			'name'        => __( 'Display Military History', $this->token ),
 			'description' => __( 'Display fields related to military history on application form.', $this->token ),
 			'placeholder' => '',
@@ -320,9 +334,9 @@ class WP_Employment {
 				'No'  => 'No'
 			),
 			'section'     => 'info'
-		];
+		);
 
-		$fields['previous'] = [
+		$fields['previous'] = array(
 			'name'        => __( 'Display Previous Employment', $this->token ),
 			'description' => __( 'Display fields related to employment history on application form.', $this->token ),
 			'placeholder' => '',
@@ -332,7 +346,7 @@ class WP_Employment {
 				'No'  => 'No'
 			),
 			'section'     => 'info'
-		];
+		);
 
 		return apply_filters( $this->token . '_meta_fields', $fields );
 	}
@@ -375,6 +389,13 @@ class WP_Employment {
 		wp_localize_script( $this->token . '-js', 'WPEmployment', $localize );
 	}
 
+	protected function get_apply_page()
+	{
+		global $wpdb;
+
+		return $wpdb->get_var( "SELECT post_name FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish' AND post_content LIKE '%[EMAPPLY]%' LIMIT 1" );
+	}
+
 	/**
 	 * Render the Job Listings page when
 	 * the WPEM shortcode is used.
@@ -382,43 +403,41 @@ class WP_Employment {
 	public function display_job_listings_page()
 	{
 		$this->enqueue_scripts( 'listings' );
-		$options   = get_option( $this->token . '_options' );
-		$companies = explode( ',', $options['companies'] );
+		$companies        = explode( ',', get_option( $this->token . '_companies' ) );
+		$args             = array( 'post_type' => $this->token, 'orderby' => 'title', 'order' => 'ASC' );
+		$openings         = new WP_Query( $args );
+		$application_page = $this->get_apply_page();
 
-		foreach ( $companies as $company ) {
-			$tag      = str_replace( ' ', '-', $company );
-			$args     = array( 'post_type' => 'openings', 'tag' => $tag, 'orderby' => 'title', 'order' => 'ASC' );
-			$openings = new WP_Query( $args );
-			$i        = 0;
-
-			if ( $openings->have_posts() ) {
+		if ( $openings->have_posts() ) {
+			foreach ( $companies as $company ) {
 				echo '<h3>' . $company . '</h3>';
-				while ( $i < $openings->post_count ) :
-					$opening = $openings->posts;
-					$meta    = get_post_meta( $opening[ $i ]->ID );
+				foreach ( $openings as $key => $opening ) {
+					$meta = get_post_meta( $opening->ID );
+					if ( $meta['company'][0] != $company ) {
+						continue;
+					}
 					?>
 					<table class="table wp-employment-table">
 						<tr>
-							<td colspan="3"><h4><?php echo $opening[ $i ]->post_title; ?></h4></td>
+							<td colspan="3"><h4><?php echo $opening->post_title; ?></h4></td>
 						</tr>
 						<tr>
-							<td width="33%"><strong>Wage: </strong><?php echo $meta['wpem_wage'][0]; ?></td>
-							<td width="33%"><strong>Hours: </strong><?php echo $meta['wpem_hours'][0]; ?></td>
+							<td width="33%"><strong>Wage: </strong><?php echo $meta['wage'][0]; ?></td>
+							<td width="33%"><strong>Hours: </strong><?php echo $meta['hours'][0]; ?></td>
 							<td width="33%"><strong>Details: </strong>
-								<a href="#" class="wp-employment-more" id="<?php echo $opening[ $i ]->ID; ?>">Show</a></td>
+								<a href="#" class="wp-employment-more" id="<?php echo $opening->ID; ?>">Show</a></td>
 						</tr>
-						<tr class="<?php echo $opening[ $i ]->ID; ?> wp-employment-details">
+						<tr class="<?php echo $opening->ID; ?> wp-employment-details">
 							<td colspan="3">
-								<?php echo wpautop( $opening[ $i ]->post_content ); ?>
+								<?php echo wpautop( $opening->post_content ); ?>
 								<hr>
-								<a class="btn wp-employment-btn" href="<?php echo $this->home_url . '/' . $options['applyp'] . '/?pos=' . $opening[ $i ]->ID; ?>">Apply
+								<a class="btn wp-employment-btn" href="<?php echo $this->home_url . '/' . $application_page . '/?pos=' . $opening->ID; ?>">Apply
 									Now</a>
 							</td>
 						</tr>
 					</table>
-					<?php
-					$i ++;
-				endwhile;
+				<?php
+				}
 			}
 		}
 	}
@@ -440,7 +459,7 @@ class WP_Employment {
 		<div id="wp-employment-apply">
 			<form id="wp-employment-form" action="<?php echo admin_url( 'admin-ajax.php' ); ?>" method="post">
 				<input type="hidden" id="wp-employment-title" name="title" value="<?php echo $title; ?>">
-				<input type="hidden" id="wp-employment-contact" name="contact" value="<?php echo $meta['wpem_contact'][0]; ?>">
+				<input type="hidden" id="wp-employment-contact" name="contact" value="<?php echo $meta['contact'][0]; ?>">
 				<input name="action" value="wp_employment_submit_application" type="hidden">
 				<?php wp_nonce_field( $this->token . '_submit_application', $this->token . '_nonce' ); ?>
 
@@ -474,12 +493,12 @@ class WP_Employment {
 					</tr>
 					<?php
 
-					if ( strlen( $meta['wpem_custom'][0] ) > 1 ) {
-						echo '<tr><td colspan="2"><label class="wp-employment-label" for="' . $meta['wpem_custom'][0] . '">' . $meta['wpem_custom'][0] . '</label>';
-						if ( $meta['wpem_custom2'][0] == 'text' ) {
-							echo '<input type="text" id="' . $meta['wpem_custom'][0] . '" name="' . $meta['wpem_custom'][0] . '">';
+					if ( strlen( $meta['custom'][0] ) > 1 && strlen( $meta['custom2'][0] ) > 1 ) {
+						echo '<tr><td colspan="2"><label class="wp-employment-label" for="' . $meta['custom'][0] . '">' . $meta['custom'][0] . '</label>';
+						if ( $meta['custom2'][0] == 'text' ) {
+							echo '<input type="text" id="' . $meta['custom'][0] . '" name="' . $meta['custom'][0] . '">';
 						} else {
-							echo '<textarea rows="5" id="' . $meta['wpem_custom'][0] . '" name="' . $meta['wpem_custom'][0] . '"></textarea>';
+							echo '<textarea rows="5" id="' . $meta['custom'][0] . '" name="' . $meta['custom'][0] . '"></textarea>';
 						}
 						echo '</td></tr>';
 					}
@@ -499,7 +518,7 @@ class WP_Employment {
 					</tr>
 				</table>
 
-				<?php if ( $meta['wpem_resume'][0] == 'Yes' ) { ?>
+				<?php if ( $meta['resume'][0] == 'Yes' ) { ?>
 					<h2>Resume & Cover Letter</h2>
 					<input id="wp-employment-resume-file" name="wp-employment-resume-file" type="file" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
 					<strong>If you include a resume, completion of the fields below is completely optional.</strong><br>
@@ -594,7 +613,7 @@ class WP_Employment {
 					</tr>
 				</table>
 
-				<?php if ( isset( $meta['wpem_edu'][0] ) && $meta['wpem_edu'][0] == 'Yes' ) { ?>
+				<?php if ( isset( $meta['education'][0] ) && $meta['education'][0] == 'Yes' ) { ?>
 					<h2>Education History</h2>
 					<table class="table wp-employment-table">
 						<tr>
@@ -723,7 +742,7 @@ class WP_Employment {
 					</table>
 				<?php } ?>
 
-				<?php if ( isset( $meta['wpem_mil'][0] ) && $meta['wpem_mil'][0] == 'Yes' ) { ?>
+				<?php if ( isset( $meta['military'][0] ) && $meta['military'][0] == 'Yes' ) { ?>
 					<h2>Military Service</h2>
 					<table class="table wp-employment-table">
 						<tr>
@@ -759,11 +778,11 @@ class WP_Employment {
 					</table>
 				<?php } ?>
 
-				<?php if ( isset( $meta['wpem_pem'][0] ) && $meta['wpem_pem'][0] == 'Yes' ) { ?>
+				<?php if ( isset( $meta['previous'][0] ) && $meta['previous'][0] == 'Yes' ) { ?>
 					<h2>Previous Employment</h2>
 					<em>List Present or Most Recent Employer First</em>
 
-					<table class="table">
+					<table class="table wp-employment-app-table">
 						<tr>
 							<td colspan="6">
 								<label for="peco1" class="wp-employment-label">Company</label>
