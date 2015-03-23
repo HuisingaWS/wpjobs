@@ -21,3 +21,11 @@ Installation
 	2. Also be sure to check the Meta information under the post body. These are settings unique to the job listing post type.
 5. Create a new WP page, and use the short code `[WPEM]` in post content to pull in active listings and format them automatically.
 6. Create another new WP page, and use the short code `[EMAPPLY]` to let viewers apply for positions that are listed.
+
+Contributing
+------------
+
+- [Fork](https://help.github.com/articles/fork-a-repo) the [repository on Github](https://github.com/aaronhuisinga/wordpress-employment)
+- Commit and push until you are happy with your contribution
+- [Make a pull request](https://help.github.com/articles/using-pull-requests)
+- Thanks!
